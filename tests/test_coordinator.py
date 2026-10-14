@@ -83,6 +83,7 @@ def mock_repository(sample_inventory_data: dict) -> MagicMock:
     repo.get_item_by_name = AsyncMock(side_effect=_get_item_by_name)
 
     repo.create_item = AsyncMock(return_value="new-item-id")
+    repo.get_item_by_identity = AsyncMock(return_value=None)
     repo.update_item = AsyncMock(return_value=True)
     repo.adjust_item_quantity = AsyncMock(return_value=None)
     repo.delete_item = AsyncMock(return_value=True)
@@ -542,6 +543,24 @@ async def test_async_increment_item_adjusts_quantity(
 
     assert ok is True
     mock_repository.adjust_item_quantity.assert_awaited_once_with("milk-id", 3)
+
+
+@pytest.mark.asyncio
+async def test_async_increment_item_uses_item_id_for_duplicate_names(
+    coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
+) -> None:
+    mock_repository.get_item_by_id = AsyncMock(
+        return_value={"id": "milk-ml", "name": "Milk", "quantity": 2, "price": 0}
+    )
+    mock_repository.adjust_item_quantity = AsyncMock(return_value=(2, 3))
+
+    with patch.object(EventBus, "async_fire"):
+        ok = await coordinator.async_increment_item("kitchen_123", "Milk", 1, item_id="milk-ml")
+
+    assert ok is True
+    mock_repository.get_item_by_id.assert_awaited()
+    mock_repository.get_item_by_name.assert_not_awaited()
+    mock_repository.adjust_item_quantity.assert_awaited_once_with("milk-ml", 1)
 
 
 @pytest.mark.asyncio
@@ -1240,7 +1259,7 @@ async def test_export_csv(
 async def test_import_json_skip(
     coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
 ) -> None:
-    mock_repository.get_item_by_name = AsyncMock(
+    mock_repository.get_item_by_identity = AsyncMock(
         return_value={"id": "existing", "name": "Milk", "quantity": 5}
     )
 
@@ -1257,7 +1276,7 @@ async def test_import_json_skip(
 async def test_import_json_overwrite(
     coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
 ) -> None:
-    mock_repository.get_item_by_name = AsyncMock(
+    mock_repository.get_item_by_identity = AsyncMock(
         return_value={"id": "existing", "name": "Milk", "quantity": 5}
     )
 
@@ -1275,7 +1294,7 @@ async def test_import_json_overwrite_updates_aliases_from_list(
     coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
 ) -> None:
     """Exported items carry aliases as a list; overwrite import must apply it."""
-    mock_repository.get_item_by_name = AsyncMock(
+    mock_repository.get_item_by_identity = AsyncMock(
         return_value={"id": "existing", "name": "Milk", "quantity": 5}
     )
 
@@ -1294,7 +1313,7 @@ async def test_import_json_overwrite_updates_aliases_from_comma_string(
     coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
 ) -> None:
     """Hand-written import data may supply aliases as a comma-separated string."""
-    mock_repository.get_item_by_name = AsyncMock(
+    mock_repository.get_item_by_identity = AsyncMock(
         return_value={"id": "existing", "name": "Milk", "quantity": 5}
     )
 
@@ -1312,7 +1331,7 @@ async def test_import_json_overwrite_updates_aliases_from_comma_string(
 async def test_import_json_merge_quantities(
     coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
 ) -> None:
-    mock_repository.get_item_by_name = AsyncMock(
+    mock_repository.get_item_by_identity = AsyncMock(
         return_value={"id": "existing", "name": "Milk", "quantity": 5}
     )
     mock_repository.adjust_item_quantity = AsyncMock(return_value=(5, 8))
@@ -1332,7 +1351,7 @@ async def test_import_json_merge_quantities(
 async def test_import_new_item(
     coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
 ) -> None:
-    mock_repository.get_item_by_name = AsyncMock(return_value=None)
+    mock_repository.get_item_by_identity = AsyncMock(return_value=None)
     mock_repository.create_item.reset_mock()
 
     data = {"items": [{"name": "NewItem", "quantity": 7}]}
@@ -1345,10 +1364,27 @@ async def test_import_new_item(
 
 
 @pytest.mark.asyncio
+async def test_import_same_name_with_different_unit_creates_variant(
+    coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
+) -> None:
+    mock_repository.get_item_by_identity = AsyncMock(return_value=None)
+    mock_repository.create_item.reset_mock()
+
+    data = {"items": [{"name": "Milk", "quantity": 3, "unit": "ml"}]}
+
+    with patch.object(EventBus, "async_fire"):
+        summary = await coordinator.async_import_inventory("kitchen_123", data, "json", "skip")
+
+    assert summary["added"] == 1
+    mock_repository.get_item_by_identity.assert_awaited_once_with("kitchen_123", "Milk", "ml", "")
+    assert mock_repository.create_item.await_args.args[1]["unit"] == "ml"
+
+
+@pytest.mark.asyncio
 async def test_import_new_item_sets_aliases(
     coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
 ) -> None:
-    mock_repository.get_item_by_name = AsyncMock(return_value=None)
+    mock_repository.get_item_by_identity = AsyncMock(return_value=None)
     mock_repository.create_item.reset_mock()
 
     data = {"items": [{"name": "NewItem", "quantity": 7, "aliases": ["alt name"]}]}

@@ -90,12 +90,31 @@ async def resolve_item_name(
         raise ServiceValidationError("An item name is required")
 
     items = await coordinator.async_list_items(inventory_id)
+    name_counts: dict[str, int] = {}
+    for item in items:
+        item_name = str(item.get("name", "")).strip()
+        if item_name:
+            normalized_name = item_name.lower()
+            name_counts[normalized_name] = name_counts.get(normalized_name, 0) + 1
+
     options: list[tuple[str, str]] = []
+    names_by_id: dict[str, str] = {}
     for item in items:
         item_name = str(item.get("name", ""))
         if not item_name:
             continue
-        options.append((item_name, item_name))
+        item_id = str(item.get("id") or item_name)
+        names_by_id[item_id] = item_name
+        display_name = item_name
+        if name_counts.get(item_name.strip().lower(), 0) > 1:
+            details = [str(item.get("unit", "")).strip()]
+            expiry_date = str(item.get("expiry_date", "")).strip()
+            if expiry_date:
+                details.append(f"scadenza {expiry_date}")
+            details = [detail for detail in details if detail]
+            display_name += f" ({', '.join(details) or 'formato non specificato'})"
+        options.append((display_name, item_id))
         for alias in item.get("aliases", []):
-            options.append((str(alias), item_name))
-    return _resolve_one(name, options, "item", "items")
+            options.append((str(alias), item_id))
+    resolved_id = _resolve_one(name, options, "item", "items")
+    return names_by_id[resolved_id]

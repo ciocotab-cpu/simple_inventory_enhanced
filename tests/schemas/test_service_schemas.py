@@ -55,6 +55,26 @@ def test_rejects_both_inventory_id_and_name(service_name: str) -> None:
         schema({"inventory_id": "inv_1", "inventory_name": "Kitchen", **extra})
 
 
+@pytest.mark.parametrize(
+    ("schema", "extra"),
+    [
+        (REMOVE_ITEM_SCHEMA, {"item_id": "item-1"}),
+        (UPDATE_ITEM_SCHEMA, {"item_id": "item-1", "name": "Whole milk"}),
+        (QUANTITY_UPDATE_SCHEMA, {"item_id": "item-1"}),
+    ],
+)
+def test_accepts_item_id_without_legacy_item_name(
+    schema: vol.Schema, extra: dict[str, str]
+) -> None:
+    result = schema({"inventory_id": "inv_1", **extra})
+    assert result["item_id"] == "item-1"
+
+
+def test_update_item_requires_item_id_or_old_name() -> None:
+    with pytest.raises(vol.Invalid, match="item_id.*old_name"):
+        UPDATE_ITEM_SCHEMA({"inventory_id": "inv_1", "name": "Whole milk"})
+
+
 def test_get_items_schema_still_accepts_either() -> None:
     assert GET_ITEMS_SCHEMA({"inventory_id": "inv_1"})["inventory_id"] == "inv_1"
     assert GET_ITEMS_SCHEMA({"inventory_name": "Kitchen"})["inventory_name"] == "Kitchen"

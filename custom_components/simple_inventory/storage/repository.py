@@ -10,6 +10,7 @@ from typing import Any, Sequence, cast
 
 import aiosqlite
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.storage import Store
 
 from ..const import (
@@ -42,7 +43,7 @@ from ..const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 LEGACY_MIGRATION_FLAG = "legacy_migrated"
 
 
@@ -238,8 +239,8 @@ class InventoryRepository:
                     name TEXT NOT NULL COLLATE NOCASE,
                     description TEXT DEFAULT '',
                     quantity REAL NOT NULL DEFAULT 0,
-                    unit TEXT DEFAULT '',
-                    expiry_date TEXT DEFAULT '',
+                    unit TEXT NOT NULL DEFAULT '' COLLATE NOCASE,
+                    expiry_date TEXT NOT NULL DEFAULT '',
                     expiry_alert_days INTEGER DEFAULT 0,
                     auto_add_enabled INTEGER NOT NULL DEFAULT 0,
                     auto_add_id_to_description_enabled INTEGER NOT NULL DEFAULT 0,
@@ -251,7 +252,7 @@ class InventoryRepository:
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (inventory_id) REFERENCES inventories(id) ON DELETE CASCADE,
-                    UNIQUE (inventory_id, name)
+                    UNIQUE (inventory_id, name, unit, expiry_date)
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_items_inventory_id
@@ -337,18 +338,19 @@ class InventoryRepository:
                 INSERT OR IGNORE INTO metadata (key, value)
                 VALUES (?, ?)
                 """,
-                ("schema_version", str(SCHEMA_VERSION)),
+                ("schema_version", "1"),
             )
-            await self._migrate_to_v2()
-            await self._migrate_to_v3()
-            return
+            current_version = 1
+        else:
+            current_version = int(row[0])
 
-        current_version = int(row[0])
         if current_version < SCHEMA_VERSION:
             if current_version < 2:
                 await self._migrate_to_v2()
             if current_version < 3:
                 await self._migrate_to_v3()
+            if current_version < 4:
+                await self._migrate_to_v4()
             await self._conn.execute(
                 "UPDATE metadata SET value = ? WHERE key = 'schema_version'",
                 (str(SCHEMA_VERSION),),
@@ -400,6 +402,65 @@ class InventoryRepository:
             await self._conn.execute(
                 "ALTER TABLE consumption_history ADD COLUMN price REAL NOT NULL DEFAULT 0"
             )
+
+    async def _migrate_to_v4(self) -> None:
+        """Allow same-name items with different units or expiry dates."""
+        assert self._conn is not None
+        await self._conn.commit()
+        await self._conn.execute("PRAGMA foreign_keys = OFF")
+        try:
+            await self._conn.execute("BEGIN")
+            await self._conn.execute("DROP TABLE IF EXISTS items_v4_migration")
+            await self._conn.execute("""
+                CREATE TABLE items_v4_migration (
+                    id TEXT PRIMARY KEY,
+                    inventory_id TEXT NOT NULL,
+                    name TEXT NOT NULL COLLATE NOCASE,
+                    description TEXT DEFAULT '',
+                    quantity REAL NOT NULL DEFAULT 0,
+                    unit TEXT NOT NULL DEFAULT '' COLLATE NOCASE,
+                    expiry_date TEXT NOT NULL DEFAULT '',
+                    expiry_alert_days INTEGER DEFAULT 0,
+                    auto_add_enabled INTEGER NOT NULL DEFAULT 0,
+                    auto_add_id_to_description_enabled INTEGER NOT NULL DEFAULT 0,
+                    auto_add_to_list_quantity REAL NOT NULL DEFAULT 0,
+                    desired_quantity REAL NOT NULL DEFAULT 0,
+                    todo_list TEXT DEFAULT '',
+                    todo_quantity_placement TEXT NOT NULL DEFAULT 'name',
+                    price REAL NOT NULL DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (inventory_id) REFERENCES inventories(id) ON DELETE CASCADE,
+                    UNIQUE (inventory_id, name, unit, expiry_date)
+                )
+                """)
+            await self._conn.execute("""
+                INSERT INTO items_v4_migration (
+                    id, inventory_id, name, description, quantity, unit,
+                    expiry_date, expiry_alert_days,
+                    auto_add_enabled, auto_add_id_to_description_enabled,
+                    auto_add_to_list_quantity, desired_quantity, todo_list,
+                    todo_quantity_placement, price, created_at, updated_at
+                )
+                SELECT
+                    id, inventory_id, name, description, quantity,
+                    TRIM(COALESCE(unit, '')), TRIM(COALESCE(expiry_date, '')), expiry_alert_days,
+                    auto_add_enabled, auto_add_id_to_description_enabled,
+                    auto_add_to_list_quantity, desired_quantity, todo_list,
+                    todo_quantity_placement, price, created_at, updated_at
+                FROM items
+                """)
+            await self._conn.execute("DROP TABLE items")
+            await self._conn.execute("ALTER TABLE items_v4_migration RENAME TO items")
+            await self._conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_items_inventory_id ON items (inventory_id)"
+            )
+            await self._conn.commit()
+        except Exception:
+            await self._conn.rollback()
+            raise
+        finally:
+            await self._conn.execute("PRAGMA foreign_keys = ON")
 
     def _connection(self) -> aiosqlite.Connection:
         """Accessor for the open connection."""
@@ -502,8 +563,8 @@ class InventoryRepository:
             FIELD_NAME: data[FIELD_NAME],
             FIELD_DESCRIPTION: data.get(FIELD_DESCRIPTION, ""),
             FIELD_QUANTITY: data.get(FIELD_QUANTITY, 0),
-            FIELD_UNIT: data.get(FIELD_UNIT, ""),
-            FIELD_EXPIRY_DATE: data.get(FIELD_EXPIRY_DATE, ""),
+            FIELD_UNIT: str(data.get(FIELD_UNIT) or "").strip(),
+            FIELD_EXPIRY_DATE: str(data.get(FIELD_EXPIRY_DATE) or "").strip(),
             FIELD_EXPIRY_ALERT_DAYS: data.get(FIELD_EXPIRY_ALERT_DAYS, 0),
             FIELD_AUTO_ADD_ENABLED: int(data.get(FIELD_AUTO_ADD_ENABLED, False)),
             FIELD_AUTO_ADD_ID_TO_DESCRIPTION_ENABLED: int(
@@ -546,7 +607,7 @@ class InventoryRepository:
                     todo_quantity_placement, price
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(inventory_id, name) DO UPDATE SET
+                ON CONFLICT(inventory_id, name, unit, expiry_date) DO UPDATE SET
                     quantity = items.quantity + excluded.quantity,
                     description = CASE
                         WHEN excluded.description != '' THEN excluded.description
@@ -620,14 +681,18 @@ class InventoryRepository:
         params.append(item_id)
         conn = self._connection()
         async with self._lock:
-            cursor = await conn.execute(
-                f"""
-                UPDATE items
-                SET {', '.join(fields)}, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-                """,
-                tuple(params),
-            )
+            try:
+                cursor = await conn.execute(
+                    f"""
+                    UPDATE items
+                    SET {', '.join(fields)}, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    tuple(params),
+                )
+            except aiosqlite.IntegrityError:
+                await conn.rollback()
+                return False
             await conn.commit()
             return cursor.rowcount > 0
 
@@ -798,9 +863,49 @@ class InventoryRepository:
 
     async def get_item_by_name(self, inventory_id: str, name: str) -> dict[str, Any] | None:
         """Retrieve item by inventory and case-insensitive name."""
+        return await self._get_item(inventory_id, "name", name)
+
+    async def get_item_by_id(self, inventory_id: str, item_id: str) -> dict[str, Any] | None:
+        """Retrieve item by inventory and stable item id."""
+        return await self._get_item(inventory_id, "id", item_id)
+
+    async def get_item_by_identity(
+        self,
+        inventory_id: str,
+        name: str,
+        unit: str,
+        expiry_date: str,
+    ) -> dict[str, Any] | None:
+        """Retrieve an item by its normalized name, unit, and expiry date."""
+        return await self._get_item(
+            inventory_id,
+            "identity",
+            name,
+            unit=unit,
+            expiry_date=expiry_date,
+        )
+
+    async def _get_item(
+        self,
+        inventory_id: str,
+        field: str,
+        value: str,
+        *,
+        unit: str = "",
+        expiry_date: str = "",
+    ) -> dict[str, Any] | None:
+        if field not in {"id", "name", "identity"}:
+            raise ValueError(f"Unsupported item lookup field: {field}")
         conn = self._connection()
+        where_clause = "name = ?"
+        params: tuple[str, ...] = (inventory_id, value)
+        if field == "id":
+            where_clause = "id = ?"
+        elif field == "identity":
+            where_clause = "name = ? AND unit = ? AND expiry_date = ?"
+            params = (inventory_id, value, unit.strip(), expiry_date.strip())
         cursor = await conn.execute(
-            """
+            f"""
             SELECT id, inventory_id, name, description, quantity, unit,
                    expiry_date, expiry_alert_days, auto_add_enabled,
                    auto_add_id_to_description_enabled, auto_add_to_list_quantity,
@@ -808,12 +913,28 @@ class InventoryRepository:
                    price, created_at, updated_at
             FROM items
             WHERE inventory_id = ?
-              AND name = ?
+              AND {where_clause}
             """,
-            (inventory_id, name),
+            params,
         )
-        row = await cursor.fetchone()
+        rows = list(await cursor.fetchall())
         await cursor.close()
+        if field == "name" and len(rows) > 1:
+            variants = []
+            for item_row in rows:
+                details = [str(item_row[5]).strip()]
+                if item_row[6]:
+                    details.append(f"scadenza {item_row[6]}")
+                details = [detail for detail in details if detail]
+                label = str(item_row[2])
+                if details:
+                    label += f" ({', '.join(details)})"
+                variants.append(label)
+            raise ServiceValidationError(
+                f"Item name '{value}' is ambiguous. Use item_id or barcode: "
+                f"{', '.join(variants)}"
+            )
+        row = rows[0] if rows else None
         if not row:
             return None
 
@@ -1229,7 +1350,7 @@ class InventoryRepository:
             """,
             params,
         )
-        rows = await cursor.fetchall()
+        rows = list(await cursor.fetchall())
         await cursor.close()
 
         return [

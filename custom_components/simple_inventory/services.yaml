@@ -160,6 +160,12 @@ remove_item:
       required: false
       selector:
         text:
+    item_id:
+      description: Stable ID of the item to remove (alternative to name or barcode)
+      example: "a46e2f2d-bbf5-44a7-a691-f9c6a4a24c80"
+      required: false
+      selector:
+        text:
     name:
       description: Name of the item to remove (required unless barcode is provided)
       example: "Frozen Pizza"
@@ -185,6 +191,12 @@ increment_item:
     inventory_name:
       description: Name of the inventory (case-insensitive). Provide this or inventory_id (not both).
       example: "Disposable Goods"
+      required: false
+      selector:
+        text:
+    item_id:
+      description: Stable ID of the item to increment (alternative to name or barcode)
+      example: "a46e2f2d-bbf5-44a7-a691-f9c6a4a24c80"
       required: false
       selector:
         text:
@@ -233,6 +245,12 @@ decrement_item:
       required: false
       selector:
         text:
+    item_id:
+      description: Stable ID of the item to decrement (alternative to name or barcode)
+      example: "a46e2f2d-bbf5-44a7-a691-f9c6a4a24c80"
+      required: false
+      selector:
+        text:
     name:
       description: Name of the item (required unless barcode is provided)
       example: "Frozen Pizza"
@@ -278,10 +296,16 @@ update_item:
       required: false
       selector:
         text:
+    item_id:
+      description: Stable ID of the item to update
+      example: "a46e2f2d-bbf5-44a7-a691-f9c6a4a24c80"
+      required: false
+      selector:
+        text:
     old_name:
-      description: Current name of the item
+      description: Current name (required when item_id is not provided)
       example: "Old Item Name"
-      required: true
+      required: false
       selector:
         text:
     name:

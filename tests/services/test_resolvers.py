@@ -283,3 +283,20 @@ async def test_resolve_item_name_own_alias_and_name_both_matching_is_not_ambiguo
     result = await resolve_item_name(coordinator, "inv_1", "broth")
 
     assert result == "Chicken Broth"
+
+
+@pytest.mark.asyncio
+async def test_resolve_item_name_same_name_variants_are_ambiguous_with_details() -> None:
+    coordinator = MagicMock()
+    coordinator.async_list_items = AsyncMock(
+        return_value=[
+            {"id": "milk-l", "name": "Milk", "unit": "L"},
+            {"id": "milk-ml", "name": "Milk", "unit": "ml"},
+        ]
+    )
+
+    with pytest.raises(ServiceValidationError, match="multiple items") as exc_info:
+        await resolve_item_name(coordinator, "inv_1", "milk")
+
+    assert "Milk (L)" in str(exc_info.value)
+    assert "Milk (ml)" in str(exc_info.value)

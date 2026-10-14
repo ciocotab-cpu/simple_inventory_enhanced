@@ -103,7 +103,13 @@ class _ImportExportMixin(_CoordinatorProtocol):
                     errors.append("Item missing name, skipped")
                     continue
 
-                existing = await self.repository.get_item_by_name(inventory_id, name.strip())
+                unit = str(item_data.get(FIELD_UNIT, DEFAULT_UNIT) or "").strip()
+                expiry_date = str(
+                    item_data.get(FIELD_EXPIRY_DATE, DEFAULT_EXPIRY_DATE) or ""
+                ).strip()
+                existing = await self.repository.get_item_by_identity(
+                    inventory_id, name.strip(), unit, expiry_date
+                )
 
                 if existing and merge_strategy == "skip":
                     skipped += 1

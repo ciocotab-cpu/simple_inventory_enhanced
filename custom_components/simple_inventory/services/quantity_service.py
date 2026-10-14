@@ -40,16 +40,25 @@ class QuantityService(BaseServiceHandler):
         call: ServiceCall,
         operation: Literal["increment", "decrement"],
         coordinator_method: Callable[
-            [SimpleInventoryCoordinator, str, str | None, float, str | None, float | None],
+            [
+                SimpleInventoryCoordinator,
+                str,
+                str | None,
+                float,
+                str | None,
+                float | None,
+                str | None,
+            ],
             Awaitable[bool],
         ],
         todo_method: Callable[[str, InventoryItem], Awaitable[bool]],
     ) -> None:
         inventory_id_raw, inventory_name, name, barcode = self._get_inventory_name_barcode(call)
+        item_id: str | None = call.data.get("item_id")
         inventory_id = await resolve_inventory_id(self.hass, inventory_id_raw, inventory_name)
         amount = float(call.data.get("amount", 1))
         price: float | None = call.data.get("price")
-        display_name = name or barcode or "unknown"
+        display_name = name or item_id or barcode or "unknown"
 
         coordinator = self._require_coordinator(inventory_id)
         if coordinator is None:
@@ -57,12 +66,27 @@ class QuantityService(BaseServiceHandler):
                 f"Inventory '{inventory_display_name(self.hass, inventory_id)}' is not currently loaded"
             )
 
-        if name:
+        if item_id:
+            item_data = await coordinator.async_get_item(inventory_id, item_id=item_id)
+            if not item_data:
+                raise ServiceValidationError(f"No item with id '{item_id}' found")
+            name = str(item_data["name"])
+            display_name = name
+        elif name:
             name = await resolve_item_name(coordinator, inventory_id, name)
             display_name = name
+        elif barcode:
+            matches = await coordinator.async_lookup_by_barcode(barcode)
+            match = next((m for m in matches if m.get("inventory_id") == inventory_id), None)
+            if match:
+                item_id = str(match["id"])
+                name = str(match["name"])
+                display_name = name
 
         try:
-            if await coordinator_method(coordinator, inventory_id, name, amount, barcode, price):
+            if await coordinator_method(
+                coordinator, inventory_id, name, amount, barcode, price, item_id
+            ):
                 resolved_name = name
                 if not resolved_name and barcode:
                     matches = await coordinator.async_lookup_by_barcode(barcode)
@@ -72,10 +96,16 @@ class QuantityService(BaseServiceHandler):
                     if match:
                         resolved_name = match.get("name")
 
-                if resolved_name:
-                    item_data = await coordinator.async_get_item(inventory_id, resolved_name)
+                if item_id:
+                    item_data = await coordinator.async_get_item(inventory_id, item_id=item_id)
                     if item_data:
-                        await todo_method(resolved_name, cast(InventoryItem, item_data))
+                        resolved_name = str(item_data["name"])
+                elif resolved_name:
+                    item_data = await coordinator.async_get_item(inventory_id, resolved_name)
+                else:
+                    item_data = None
+                if item_data and resolved_name:
+                    await todo_method(resolved_name, cast(InventoryItem, item_data))
 
                 await self._save_and_log_success(
                     coordinator,
@@ -109,8 +139,15 @@ class QuantityService(BaseServiceHandler):
         await self._handle_quantity_change(
             call,
             "increment",
-            lambda coordinator, inv_id, item_name, amt, bc, p: (
-                coordinator.async_increment_item(inv_id, item_name, amt, barcode=bc, price=p)
+            lambda coordinator, inv_id, item_name, amt, bc, p, item_id: (
+                coordinator.async_increment_item(
+                    inv_id,
+                    item_name,
+                    amt,
+                    barcode=bc,
+                    price=p,
+                    **({"item_id": item_id} if item_id else {}),
+                )
             ),
             self.todo_manager.check_and_remove_item,
         )
@@ -119,8 +156,15 @@ class QuantityService(BaseServiceHandler):
         await self._handle_quantity_change(
             call,
             "decrement",
-            lambda coordinator, inv_id, item_name, amt, bc, p: (
-                coordinator.async_decrement_item(inv_id, item_name, amt, barcode=bc, price=p)
+            lambda coordinator, inv_id, item_name, amt, bc, p, item_id: (
+                coordinator.async_decrement_item(
+                    inv_id,
+                    item_name,
+                    amt,
+                    barcode=bc,
+                    price=p,
+                    **({"item_id": item_id} if item_id else {}),
+                )
             ),
             self.todo_manager.check_and_add_item,
         )
@@ -158,7 +202,11 @@ class QuantityService(BaseServiceHandler):
         if result.get("success") and action in ("increment", "decrement"):
             item_name: str = result["item_name"]
             resolved_id: str = result["inventory_id"]
-            item_data = await coordinator.async_get_item(resolved_id, item_name)
+            item_id = result.get("item_id")
+            if item_id:
+                item_data = await coordinator.async_get_item(resolved_id, item_id=item_id)
+            else:
+                item_data = await coordinator.async_get_item(resolved_id, item_name)
             if item_data:
                 if action == "decrement":
                     await self.todo_manager.check_and_add_item(

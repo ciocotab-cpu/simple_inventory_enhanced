@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.simple_inventory.const import (
     FIELD_AUTO_ADD_ENABLED,
@@ -107,7 +108,7 @@ async def test_create_item_merges_on_name_conflict(repo: InventoryRepository) ->
 
     first_id = await repo.create_item(
         "inv1",
-        {FIELD_NAME: "Milk", FIELD_QUANTITY: 2, FIELD_DESCRIPTION: "", FIELD_UNIT: ""},
+        {FIELD_NAME: "Milk", FIELD_QUANTITY: 2, FIELD_DESCRIPTION: "", FIELD_UNIT: "L"},
     )
     second_id = await repo.create_item(
         "inv1",
@@ -122,6 +123,119 @@ async def test_create_item_merges_on_name_conflict(repo: InventoryRepository) ->
     assert item[FIELD_QUANTITY] == 5
     assert item[FIELD_UNIT] == "L"
     assert item[FIELD_DESCRIPTION] == "desc"
+
+
+@pytest.mark.asyncio
+async def test_create_item_keeps_same_name_with_different_units(repo: InventoryRepository) -> None:
+    await repo.upsert_inventory("inv1", "Kitchen", "", "", "", None)
+
+    liters_id = await repo.create_item(
+        "inv1",
+        {FIELD_NAME: "Milk", FIELD_QUANTITY: 2, FIELD_UNIT: "L"},
+    )
+    milliliters_id = await repo.create_item(
+        "inv1",
+        {FIELD_NAME: "milk", FIELD_QUANTITY: 3, FIELD_UNIT: "ml"},
+    )
+
+    assert milliliters_id != liters_id
+    items = await repo.list_items_with_details("inv1")
+    assert {(item[FIELD_UNIT], item[FIELD_QUANTITY]) for item in items} == {
+        ("L", 2),
+        ("ml", 3),
+    }
+    liters_item = await repo.get_item_by_id("inv1", liters_id)
+    milliliters_item = await repo.get_item_by_id("inv1", milliliters_id)
+    identity_item = await repo.get_item_by_identity("inv1", "milk", "ML", "")
+    assert liters_item is not None and liters_item[FIELD_UNIT] == "L"
+    assert milliliters_item is not None and milliliters_item[FIELD_UNIT] == "ml"
+    assert identity_item is not None and identity_item["id"] == milliliters_id
+    with pytest.raises(ServiceValidationError, match="ambiguous"):
+        await repo.get_item_by_name("inv1", "Milk")
+
+
+@pytest.mark.asyncio
+async def test_create_item_keeps_same_name_and_unit_with_different_expiries(
+    repo: InventoryRepository,
+) -> None:
+    await repo.upsert_inventory("inv1", "Kitchen", "", "", "", None)
+
+    first_id = await repo.create_item(
+        "inv1",
+        {
+            FIELD_NAME: "Milk",
+            FIELD_QUANTITY: 2,
+            FIELD_UNIT: "L",
+            FIELD_EXPIRY_DATE: "2030-01-01",
+        },
+    )
+    second_id = await repo.create_item(
+        "inv1",
+        {
+            FIELD_NAME: "Milk",
+            FIELD_QUANTITY: 3,
+            FIELD_UNIT: "L",
+            FIELD_EXPIRY_DATE: "2030-02-01",
+        },
+    )
+
+    assert second_id != first_id
+    items = await repo.list_items_with_details("inv1")
+    assert {(item[FIELD_EXPIRY_DATE], item[FIELD_QUANTITY]) for item in items} == {
+        ("2030-01-01", 2),
+        ("2030-02-01", 3),
+    }
+
+
+@pytest.mark.asyncio
+async def test_update_item_rejects_identity_collision(repo: InventoryRepository) -> None:
+    await repo.upsert_inventory("inv1", "Kitchen", "", "", "", None)
+    first_id = await repo.create_item(
+        "inv1", {FIELD_NAME: "Milk", FIELD_QUANTITY: 2, FIELD_UNIT: "L"}
+    )
+    await repo.create_item("inv1", {FIELD_NAME: "Milk", FIELD_QUANTITY: 3, FIELD_UNIT: "ml"})
+
+    updated = await repo.update_item(first_id, {FIELD_UNIT: "ml"})
+
+    assert updated is False
+    items = await repo.list_items_with_details("inv1")
+    assert {(item[FIELD_UNIT], item[FIELD_QUANTITY]) for item in items} == {
+        ("L", 2),
+        ("ml", 3),
+    }
+
+
+@pytest.mark.asyncio
+async def test_migrate_v3_preserves_item_ids_and_related_rows(repo: InventoryRepository) -> None:
+    await repo.upsert_inventory("inv1", "Kitchen", "", "", "", None)
+    item_id = await repo.create_item(
+        "inv1", {FIELD_NAME: "Milk", FIELD_QUANTITY: 2, FIELD_UNIT: "L"}
+    )
+    location_id = await repo.ensure_location("inv1", "Fridge")
+    await repo.set_item_locations(item_id, [location_id])
+    await repo.add_item_barcode(item_id, "inv1", "123456")
+
+    await repo._connection().execute("UPDATE metadata SET value = '3' WHERE key = 'schema_version'")
+    await repo._connection().commit()
+    await repo._ensure_schema_version()
+
+    item = await repo.get_item_by_id("inv1", item_id)
+    barcode_item = await repo.get_item_by_barcode("inv1", "123456")
+    items = await repo.list_items_with_details("inv1")
+    foreign_key_check = list(await repo._connection().execute_fetchall("PRAGMA foreign_key_check"))
+
+    assert item is not None
+    assert item["id"] == item_id
+    assert item[FIELD_UNIT] == "L"
+    assert barcode_item is not None and barcode_item["id"] == item_id
+    assert items[0][FIELD_LOCATION] == "Fridge"
+    assert foreign_key_check == []
+    version_rows = list(
+        await repo._connection().execute_fetchall(
+            "SELECT value FROM metadata WHERE key = 'schema_version'"
+        )
+    )
+    assert version_rows[0][0] == "4"
 
 
 @pytest.mark.asyncio

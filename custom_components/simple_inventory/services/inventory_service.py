@@ -130,7 +130,7 @@ class InventoryService(BaseServiceHandler):
                     "(duplicate name/barcode or invalid auto-add configuration)"
                 )
 
-            item = await coordinator.async_get_item(inventory_id, name)
+            item = await coordinator.async_get_item(inventory_id, item_id=item_id)
             if item:
                 await self._handle_todo_auto_add(name, cast(InventoryItem, item))
 
@@ -148,8 +148,9 @@ class InventoryService(BaseServiceHandler):
 
     async def async_remove_item(self, call: ServiceCall) -> None:
         inventory_id_raw, inventory_name, name, barcode = self._get_inventory_name_barcode(call)
+        item_id = call.data.get("item_id")
         inventory_id = await resolve_inventory_id(self.hass, inventory_id_raw, inventory_name)
-        display_name = name or barcode or "unknown"
+        display_name = name or item_id or barcode or "unknown"
 
         coordinator = self._require_coordinator(inventory_id)
         if coordinator is None:
@@ -157,7 +158,13 @@ class InventoryService(BaseServiceHandler):
                 f"Inventory '{inventory_display_name(self.hass, inventory_id)}' is not currently loaded"
             )
 
-        if name:
+        if item_id:
+            item = await coordinator.async_get_item(inventory_id, item_id=item_id)
+            if not item:
+                raise ServiceValidationError(f"No item with id '{item_id}' found")
+            name = str(item["name"])
+            display_name = name
+        elif name:
             name = await resolve_item_name(coordinator, inventory_id, name)
             display_name = name
 
@@ -169,13 +176,19 @@ class InventoryService(BaseServiceHandler):
                 match = next((m for m in matches if m.get("inventory_id") == inventory_id), None)
                 if match:
                     resolved_name = match.get("name")
+                    item_id = str(match["id"])
 
-            if resolved_name:
+            if item_id:
+                item = await coordinator.async_get_item(inventory_id, item_id=item_id)
+            elif resolved_name:
                 item = await coordinator.async_get_item(inventory_id, resolved_name)
             else:
                 item = None
 
-            if await coordinator.async_remove_item(inventory_id, name, barcode=barcode):
+            remove_kwargs: dict[str, Any] = {"barcode": barcode}
+            if item_id:
+                remove_kwargs["item_id"] = item_id
+            if await coordinator.async_remove_item(inventory_id, name, **remove_kwargs):
                 if item and resolved_name:
                     await self.todo_manager.check_and_remove_item(
                         resolved_name, cast(InventoryItem, item)
@@ -206,7 +219,8 @@ class InventoryService(BaseServiceHandler):
         inventory_id = await resolve_inventory_id(
             self.hass, data.get("inventory_id"), data.get("inventory_name")
         )
-        old_name = data["old_name"]
+        old_name = data.get("old_name", "")
+        item_id = data.get("item_id")
         new_name = data["name"]
         barcode = data.get("barcode")
         aliases = data.get("aliases")
@@ -217,9 +231,13 @@ class InventoryService(BaseServiceHandler):
                 f"Inventory '{inventory_display_name(self.hass, inventory_id)}' is not currently loaded"
             )
 
-        old_name = await resolve_item_name(coordinator, inventory_id, old_name)
-
-        existing_item = await coordinator.async_get_item(inventory_id, old_name)
+        if item_id:
+            existing_item = await coordinator.async_get_item(inventory_id, item_id=item_id)
+            if existing_item:
+                old_name = str(existing_item["name"])
+        else:
+            old_name = await resolve_item_name(coordinator, inventory_id, old_name)
+            existing_item = await coordinator.async_get_item(inventory_id, old_name)
         if not existing_item:
             self._log_item_not_found("Update item", old_name, inventory_id)
             raise ServiceValidationError(
@@ -228,14 +246,16 @@ class InventoryService(BaseServiceHandler):
             )
 
         update_data = self._extract_update_fields(data)
+        update_kwargs: dict[str, Any] = {"barcode": barcode, "aliases": aliases}
+        if item_id:
+            update_kwargs["item_id"] = item_id
 
         try:
             updated = await coordinator.async_update_item(
                 inventory_id,
                 old_name,
                 new_name,
-                barcode=barcode,
-                aliases=aliases,
+                **update_kwargs,
                 **update_data,
             )
             if not updated:
@@ -244,8 +264,10 @@ class InventoryService(BaseServiceHandler):
                     f"Could not update item '{old_name}' in inventory "
                     f"'{inventory_display_name(self.hass, inventory_id)}'"
                 )
-
-            updated_item = await coordinator.async_get_item(inventory_id, new_name)
+            if item_id:
+                updated_item = await coordinator.async_get_item(inventory_id, item_id=item_id)
+            else:
+                updated_item = await coordinator.async_get_item(inventory_id, new_name)
             if updated_item:
                 await self._handle_todo_auto_add(new_name, cast(InventoryItem, updated_item))
 
