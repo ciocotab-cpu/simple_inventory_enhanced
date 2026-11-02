@@ -556,26 +556,26 @@ Example response (lookup):
 
 The integration provides WebSocket commands for real-time communication. These are used by the companion card and can also be used by custom panels or scripts.
 
-### `simple_inventory/list_items`
+### `simple_inventory_enhanced/list_items`
 
 Fetch all items for an inventory.
 
 ```json
 {
-  "type": "simple_inventory/list_items",
+  "type": "simple_inventory_enhanced/list_items",
   "inventory_id": "01JYFPCDMBRBRK4MB3C26S2FKH"
 }
 ```
 
 Returns: `{ "items": [...] }`
 
-### `simple_inventory/get_item`
+### `simple_inventory_enhanced/get_item`
 
 Fetch a single item by name.
 
 ```json
 {
-  "type": "simple_inventory/get_item",
+  "type": "simple_inventory_enhanced/get_item",
   "inventory_id": "01JYFPCDMBRBRK4MB3C26S2FKH",
   "name": "Frozen Pizza"
 }
@@ -583,13 +583,13 @@ Fetch a single item by name.
 
 Returns: `{ "item": { ... } }`
 
-### `simple_inventory/subscribe`
+### `simple_inventory_enhanced/subscribe`
 
 Subscribe to real-time inventory updates. When any item changes, you receive the full updated item list.
 
 ```json
 {
-  "type": "simple_inventory/subscribe",
+  "type": "simple_inventory_enhanced/subscribe",
   "inventory_id": "01JYFPCDMBRBRK4MB3C26S2FKH"
 }
 ```
@@ -598,19 +598,19 @@ Omit `inventory_id` to subscribe to updates from all inventories:
 
 ```json
 {
-  "type": "simple_inventory/subscribe"
+  "type": "simple_inventory_enhanced/subscribe"
 }
 ```
 
 When subscribed to a specific inventory, each event delivers `{ "items": [...] }` with the full item list. When subscribed globally, events deliver `{ "event": "updated" }`.
 
-### `simple_inventory/get_history`
+### `simple_inventory_enhanced/get_history`
 
 Query change history for an inventory or a specific item.
 
 ```json
 {
-  "type": "simple_inventory/get_history",
+  "type": "simple_inventory_enhanced/get_history",
   "inventory_id": "01JYFPCDMBRBRK4MB3C26S2FKH",
   "item_name": "Frozen Pizza",
   "event_type": "decrement",
@@ -629,13 +629,13 @@ Returns: `{ "events": [...] }` where each event has:
 - `quantity_before`, `quantity_after` — Stock levels
 - `timestamp` — When it happened
 
-### `simple_inventory/get_item_consumption_rates`
+### `simple_inventory_enhanced/get_item_consumption_rates`
 
 Get consumption analytics for a specific item. Requires at least 2 decrement events to produce meaningful data.
 
 ```json
 {
-  "type": "simple_inventory/get_item_consumption_rates",
+  "type": "simple_inventory_enhanced/get_item_consumption_rates",
   "inventory_id": "01JYFPCDMBRBRK4MB3C26S2FKH",
   "item_name": "Frozen Pizza",
   "window_days": 30
@@ -676,26 +676,26 @@ Returns:
 | `daily_spend_rate` | Average daily purchasing cost (null if no priced restock events) |
 | `weekly_spend_rate` | Average weekly purchasing cost (null if no priced restock events) |
 
-### `simple_inventory/lookup_by_barcode`
+### `simple_inventory_enhanced/lookup_by_barcode`
 
 Search for an item by barcode across all inventories.
 
 ```json
 {
-  "type": "simple_inventory/lookup_by_barcode",
+  "type": "simple_inventory_enhanced/lookup_by_barcode",
   "barcode": "012345678901"
 }
 ```
 
 Returns: `{ "items": [...] }` — each item includes `inventory_id` and `inventory_name`.
 
-### `simple_inventory/scan_barcode`
+### `simple_inventory_enhanced/scan_barcode`
 
 Scan a barcode and perform an action on the matched item.
 
 ```json
 {
-  "type": "simple_inventory/scan_barcode",
+  "type": "simple_inventory_enhanced/scan_barcode",
   "barcode": "012345678901",
   "action": "increment",
   "amount": 1.0,
@@ -707,13 +707,13 @@ Only `barcode` and `action` are required. `amount` defaults to 1. `inventory_id`
 
 Returns: `{ "action": "increment", "success": true, "item_name": "...", "inventory_id": "...", "amount": 1.0 }`
 
-### `simple_inventory/export`
+### `simple_inventory_enhanced/export`
 
 Export inventory data.
 
 ```json
 {
-  "type": "simple_inventory/export",
+  "type": "simple_inventory_enhanced/export",
   "inventory_id": "01JYFPCDMBRBRK4MB3C26S2FKH",
   "format": "json"
 }
@@ -721,13 +721,13 @@ Export inventory data.
 
 Supported formats: `json`, `csv`
 
-### `simple_inventory/import`
+### `simple_inventory_enhanced/import`
 
 Import inventory data with a merge strategy.
 
 ```json
 {
-  "type": "simple_inventory/import",
+  "type": "simple_inventory_enhanced/import",
   "inventory_id": "01JYFPCDMBRBRK4MB3C26S2FKH",
   "data": [{"name": "New Item", "quantity": 3}],
   "format": "json",
@@ -786,7 +786,7 @@ today; contributions welcome), to review the content first, or because you
 skipped the checkbox — copy the same file manually:
 
 ```bash
-cp custom_components/simple_inventory/data/custom_sentences/en/simple_inventory_enhanced.yaml \
+cp custom_components/simple_inventory_enhanced/data/custom_sentences/en/simple_inventory_enhanced.yaml \
    <config>/custom_sentences/en/simple_inventory_enhanced.yaml
 ```
 
