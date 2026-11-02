@@ -11,11 +11,11 @@ from hassil.recognize import RecognizeResult, recognize_best
 _YAML_PATH = (
     Path(__file__).parent.parent
     / "custom_components"
-    / "simple_inventory"
+    / "simple_inventory_enhanced"
     / "data"
     / "custom_sentences"
     / "en"
-    / "simple_inventory.yaml"
+    / "simple_inventory_enhanced.yaml"
 )
 
 

@@ -6,20 +6,20 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.simple_inventory.providers.open_beauty_facts import (
+from custom_components.simple_inventory_enhanced.providers.open_beauty_facts import (
     OpenBeautyFactsProvider,
 )
-from custom_components.simple_inventory.providers.open_pet_food_facts import (
+from custom_components.simple_inventory_enhanced.providers.open_pet_food_facts import (
     OpenPetFoodFactsProvider,
 )
-from custom_components.simple_inventory.providers.openfoodfacts import OpenFoodFactsProvider
-from custom_components.simple_inventory.providers.registry import (
+from custom_components.simple_inventory_enhanced.providers.openfoodfacts import OpenFoodFactsProvider
+from custom_components.simple_inventory_enhanced.providers.registry import (
     DEFAULT_PROVIDER,
     PROVIDER_REGISTRY,
     create_provider,
     get_all_providers,
 )
-from custom_components.simple_inventory.providers.upcitemdb import UPCItemDBProvider
+from custom_components.simple_inventory_enhanced.providers.upcitemdb import UPCItemDBProvider
 
 
 @pytest.fixture

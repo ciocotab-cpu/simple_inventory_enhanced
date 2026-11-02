@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import EventBus, HomeAssistant
 
-from custom_components.simple_inventory.sensors import ExpiredItemsSensor
+from custom_components.simple_inventory_enhanced.sensors import ExpiredItemsSensor
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def expired_sensor(hass: HomeAssistant, mock_sensor_coordinator: MagicMock) -> E
 
 def test_init(expired_sensor: ExpiredItemsSensor) -> None:
     assert expired_sensor._attr_name == "Kitchen Expired Items"
-    assert expired_sensor._attr_unique_id == "simple_inventory_expired_items_kitchen_inventory"
+    assert expired_sensor._attr_unique_id == "simple_inventory_enhanced_expired_items_kitchen_inventory"
     assert expired_sensor._attr_native_unit_of_measurement == "items"
     assert expired_sensor._attr_icon == "mdi:calendar-remove"
     assert expired_sensor.inventory_id == "kitchen_inventory"

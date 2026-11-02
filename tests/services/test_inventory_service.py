@@ -10,8 +10,8 @@ import pytest
 from homeassistant.core import ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.simple_inventory.services.base_service import BaseServiceHandler
-from custom_components.simple_inventory.services.inventory_service import InventoryService
+from custom_components.simple_inventory_enhanced.services.base_service import BaseServiceHandler
+from custom_components.simple_inventory_enhanced.services.inventory_service import InventoryService
 
 
 class TestInventoryService:
@@ -401,7 +401,7 @@ class TestInventoryService:
         """When no coordinator is registered for an inventory, fall back to the repository."""
         from unittest.mock import AsyncMock
 
-        from custom_components.simple_inventory.const import DOMAIN
+        from custom_components.simple_inventory_enhanced.const import DOMAIN
 
         mock_repo = MagicMock()
         mock_repo.list_items_with_details = AsyncMock(
@@ -415,7 +415,7 @@ class TestInventoryService:
         call.data = {"inventory_id": "kitchen"}
 
         with patch(
-            "custom_components.simple_inventory.services.inventory_service.get_repository",
+            "custom_components.simple_inventory_enhanced.services.inventory_service.get_repository",
             return_value=mock_repo,
         ):
             result = await inventory_service.async_get_items(call)
@@ -483,7 +483,7 @@ class TestInventoryService:
         inventory_service: InventoryService,
         add_item_service_call: ServiceCall,
     ) -> None:
-        from custom_components.simple_inventory.const import DOMAIN
+        from custom_components.simple_inventory_enhanced.const import DOMAIN
 
         inventory_service.hass.data[DOMAIN]["coordinators"] = {}
 
@@ -496,7 +496,7 @@ class TestInventoryService:
         inventory_service: InventoryService,
         basic_service_call: ServiceCall,
     ) -> None:
-        from custom_components.simple_inventory.const import DOMAIN
+        from custom_components.simple_inventory_enhanced.const import DOMAIN
 
         inventory_service.hass.data[DOMAIN]["coordinators"] = {}
 
@@ -509,7 +509,7 @@ class TestInventoryService:
         inventory_service: InventoryService,
         update_item_service_call: ServiceCall,
     ) -> None:
-        from custom_components.simple_inventory.const import DOMAIN
+        from custom_components.simple_inventory_enhanced.const import DOMAIN
 
         inventory_service.hass.data[DOMAIN]["coordinators"] = {}
 

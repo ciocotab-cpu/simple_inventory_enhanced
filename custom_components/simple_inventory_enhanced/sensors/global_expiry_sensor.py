@@ -22,7 +22,7 @@ class GlobalItemsExpiringSoonSensor(SensorEntity):
         self.hass = hass
         self.coordinator = coordinator
         self._attr_name = "All Items Expiring Soon"
-        self._attr_unique_id = "simple_inventory_all_expiring_items"
+        self._attr_unique_id = "simple_inventory_enhanced_all_expiring_items"
         self._attr_icon = "mdi:calendar-alert"
         self._attr_native_unit_of_measurement = "items"
         self._attr_extra_state_attributes: dict[str, Any] = {}

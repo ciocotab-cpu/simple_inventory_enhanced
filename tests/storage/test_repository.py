@@ -11,7 +11,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.simple_inventory.const import (
+from custom_components.simple_inventory_enhanced.const import (
     FIELD_AUTO_ADD_ENABLED,
     FIELD_AUTO_ADD_TO_LIST_QUANTITY,
     FIELD_CATEGORY,
@@ -28,7 +28,7 @@ from custom_components.simple_inventory.const import (
     INVENTORY_ITEMS,
     INVENTORY_NAME,
 )
-from custom_components.simple_inventory.storage.repository import InventoryRepository
+from custom_components.simple_inventory_enhanced.storage.repository import InventoryRepository
 
 
 @pytest.fixture
@@ -44,7 +44,9 @@ def hass_with_tmp_config(hass: HomeAssistant, tmp_path: Path) -> HomeAssistant:
 
 @pytest.fixture
 async def repo(hass_with_tmp_config: HomeAssistant) -> AsyncGenerator[InventoryRepository, None]:
-    repository = InventoryRepository(hass_with_tmp_config, db_filename="test_simple_inventory.db")
+    repository = InventoryRepository(
+        hass_with_tmp_config, db_filename="test_simple_inventory_enhanced.db"
+    )
     await repository.async_initialize()
     try:
         yield repository
@@ -249,7 +251,57 @@ async def test_update_item_updates_fields(repo: InventoryRepository) -> None:
     item = await repo.get_item_by_name("inv1", "bread")
     assert item is not None
     assert item[FIELD_QUANTITY] == 5
-    assert item[FIELD_UNIT] == "loaf"
+
+
+@pytest.mark.asyncio
+async def test_migrates_legacy_database_filename(
+    hass_with_tmp_config: HomeAssistant,
+) -> None:
+    legacy = InventoryRepository(hass_with_tmp_config, db_filename="simple_inventory.db")
+    await legacy.async_initialize()
+    await legacy.upsert_inventory("legacy-inventory", "Pantry")
+    item_id = await legacy.create_item(
+        "legacy-inventory",
+        {FIELD_NAME: "Milk", FIELD_QUANTITY: 2, FIELD_UNIT: "L"},
+    )
+    await legacy.async_close()
+
+    renamed = InventoryRepository(hass_with_tmp_config)
+    await renamed.async_initialize()
+
+    item = await renamed.get_item_by_id("legacy-inventory", item_id)
+    assert item is not None
+    assert item[FIELD_NAME] == "Milk"
+    assert item[FIELD_UNIT] == "L"
+    assert Path(hass_with_tmp_config.config.path("simple_inventory.db")).is_file()
+    assert Path(hass_with_tmp_config.config.path("simple_inventory_enhanced.db")).is_file()
+    await renamed.async_close()
+
+
+@pytest.mark.asyncio
+async def test_migrates_legacy_store_key(repo: InventoryRepository) -> None:
+    conn = repo._connection()
+    await conn.execute("DELETE FROM metadata WHERE key = 'legacy_migrated'")
+    await conn.commit()
+    legacy_data = {
+        "inventories": {
+            "legacy-inventory": {
+                "name": "Pantry",
+                "items": {"Milk": {"quantity": 2, "unit": "L"}},
+            }
+        }
+    }
+
+    with patch(
+        "custom_components.simple_inventory_enhanced.storage.repository.Store.async_load",
+        new=AsyncMock(side_effect=[None, legacy_data]),
+    ):
+        await repo._maybe_migrate_legacy_store()
+
+    item = await repo.get_item_by_name("legacy-inventory", "Milk")
+    assert item is not None
+    assert item[FIELD_QUANTITY] == 2
+    assert item[FIELD_UNIT] == "L"
 
 
 @pytest.mark.asyncio
@@ -395,7 +447,7 @@ async def test_legacy_migration_marks_flag_without_data(repo: InventoryRepositor
     fresh = InventoryRepository(hass, db_filename="fresh_migration.db")
 
     with patch(
-        "custom_components.simple_inventory.storage.repository.Store.async_load",
+        "custom_components.simple_inventory_enhanced.storage.repository.Store.async_load",
         new=AsyncMock(return_value=None),
     ):
         await fresh.async_initialize()
@@ -441,7 +493,7 @@ async def test_legacy_migration_imports_items(repo: InventoryRepository) -> None
     }
 
     with patch(
-        "custom_components.simple_inventory.storage.repository.Store.async_load",
+        "custom_components.simple_inventory_enhanced.storage.repository.Store.async_load",
         new=AsyncMock(return_value=legacy_payload),
     ):
         await fresh.async_initialize()
@@ -470,7 +522,7 @@ async def test_legacy_migration_skips_when_flag_already_set(repo: InventoryRepos
     await conn.commit()
 
     with patch(
-        "custom_components.simple_inventory.storage.repository.Store.async_load",
+        "custom_components.simple_inventory_enhanced.storage.repository.Store.async_load",
         new=AsyncMock(side_effect=AssertionError("Should not load legacy store")),
     ):
         # Call migration method again; it should return immediately

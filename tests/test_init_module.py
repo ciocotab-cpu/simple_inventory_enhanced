@@ -1,4 +1,4 @@
-"""Tests for custom_components.simple_inventory.__init__ (integration setup/unload)."""
+"""Tests for custom_components.simple_inventory_enhanced.__init__ (integration setup/unload)."""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.simple_inventory import (
+from custom_components.simple_inventory_enhanced import (
     async_remove_entry,
     async_setup_entry,
     async_unload_entry,
 )
-from custom_components.simple_inventory.const import (
+from custom_components.simple_inventory_enhanced.const import (
     DOMAIN,
     SERVICE_ADD_ITEM,
     SERVICE_DECREMENT_ITEM,
@@ -77,11 +77,11 @@ async def test_async_setup_entry_first_creates_repo_and_registers_services(
     hass_mock.async_create_task = MagicMock(side_effect=lambda coro: asyncio.create_task(coro))
 
     with (
-        patch("custom_components.simple_inventory.InventoryRepository") as repo_cls,
-        patch("custom_components.simple_inventory.SimpleInventoryCoordinator") as coord_cls,
-        patch("custom_components.simple_inventory.TodoManager") as todo_cls,
-        patch("custom_components.simple_inventory.ServiceHandler") as handler_cls,
-        patch("custom_components.simple_inventory.async_register_intents") as register_intents_mock,
+        patch("custom_components.simple_inventory_enhanced.InventoryRepository") as repo_cls,
+        patch("custom_components.simple_inventory_enhanced.SimpleInventoryCoordinator") as coord_cls,
+        patch("custom_components.simple_inventory_enhanced.TodoManager") as todo_cls,
+        patch("custom_components.simple_inventory_enhanced.ServiceHandler") as handler_cls,
+        patch("custom_components.simple_inventory_enhanced.async_register_intents") as register_intents_mock,
     ):
         repo = repo_cls.return_value
         repo.async_initialize = AsyncMock()
@@ -151,10 +151,10 @@ async def test_async_setup_entry_second_does_not_reregister_services(
     hass_mock.async_create_task = MagicMock(side_effect=lambda coro: asyncio.create_task(coro))
 
     with (
-        patch("custom_components.simple_inventory.InventoryRepository") as repo_cls,
-        patch("custom_components.simple_inventory.SimpleInventoryCoordinator") as coord_cls,
-        patch("custom_components.simple_inventory.TodoManager"),
-        patch("custom_components.simple_inventory.ServiceHandler") as handler_cls,
+        patch("custom_components.simple_inventory_enhanced.InventoryRepository") as repo_cls,
+        patch("custom_components.simple_inventory_enhanced.SimpleInventoryCoordinator") as coord_cls,
+        patch("custom_components.simple_inventory_enhanced.TodoManager"),
+        patch("custom_components.simple_inventory_enhanced.ServiceHandler") as handler_cls,
     ):
         repo = repo_cls.return_value
         repo.async_initialize = AsyncMock()
@@ -191,10 +191,10 @@ async def test_async_setup_entry_create_global_triggers_flow(
     hass_mock.config_entries.async_entries = MagicMock(return_value=[])
 
     with (
-        patch("custom_components.simple_inventory.InventoryRepository") as repo_cls,
-        patch("custom_components.simple_inventory.SimpleInventoryCoordinator") as coord_cls,
-        patch("custom_components.simple_inventory.TodoManager"),
-        patch("custom_components.simple_inventory.ServiceHandler"),
+        patch("custom_components.simple_inventory_enhanced.InventoryRepository") as repo_cls,
+        patch("custom_components.simple_inventory_enhanced.SimpleInventoryCoordinator") as coord_cls,
+        patch("custom_components.simple_inventory_enhanced.TodoManager"),
+        patch("custom_components.simple_inventory_enhanced.ServiceHandler"),
     ):
         repo_cls.return_value.async_initialize = AsyncMock()
         coord_cls.return_value.async_initialize = AsyncMock()
@@ -225,7 +225,7 @@ async def test_async_unload_entry_non_last_keeps_services_and_repo(
     }
 
     with patch(
-        "custom_components.simple_inventory.async_unregister_intents"
+        "custom_components.simple_inventory_enhanced.async_unregister_intents"
     ) as unregister_intents_mock:
         ok = await async_unload_entry(hass_mock, entry1)
         assert ok is True
@@ -252,7 +252,7 @@ async def test_async_unload_entry_last_removes_services_and_closes_repo(
     }
 
     with patch(
-        "custom_components.simple_inventory.async_unregister_intents"
+        "custom_components.simple_inventory_enhanced.async_unregister_intents"
     ) as unregister_intents_mock:
         ok = await async_unload_entry(hass_mock, entry1)
         assert ok is True
@@ -289,7 +289,7 @@ async def test_async_remove_entry_deletes_inventory_and_closes_repo(
     mock_repo.delete_inventory = AsyncMock(return_value=True)
     mock_repo.async_close = AsyncMock()
 
-    with patch("custom_components.simple_inventory.InventoryRepository", return_value=mock_repo):
+    with patch("custom_components.simple_inventory_enhanced.InventoryRepository", return_value=mock_repo):
         await async_remove_entry(hass, entry1)
 
     mock_repo.async_initialize.assert_awaited_once()
@@ -309,7 +309,7 @@ async def test_async_remove_entry_closes_repo_even_on_error(
     mock_repo.async_close = AsyncMock()
 
     with (
-        patch("custom_components.simple_inventory.InventoryRepository", return_value=mock_repo),
+        patch("custom_components.simple_inventory_enhanced.InventoryRepository", return_value=mock_repo),
         pytest.raises(RuntimeError, match="db error"),
     ):
         await async_remove_entry(hass, entry1)

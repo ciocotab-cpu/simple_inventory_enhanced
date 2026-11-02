@@ -8,10 +8,10 @@ import pytest
 from homeassistant.core import HomeAssistant
 from typing_extensions import Self
 
-from custom_components.simple_inventory.services.base_service import (
+from custom_components.simple_inventory_enhanced.services.base_service import (
     BaseServiceHandler,
 )
-from custom_components.simple_inventory.types import AddItemServiceData
+from custom_components.simple_inventory_enhanced.types import AddItemServiceData
 
 
 class TestBaseServiceHandler:
@@ -19,7 +19,7 @@ class TestBaseServiceHandler:
 
     def test_init(self: Self, hass: HomeAssistant) -> None:
         """Test BaseServiceHandler initialization."""
-        from custom_components.simple_inventory.services.base_service import (
+        from custom_components.simple_inventory_enhanced.services.base_service import (
             BaseServiceHandler,
         )
 
@@ -204,7 +204,7 @@ class TestBaseServiceHandler:
         self: Self, hass: HomeAssistant, mock_coordinator: MagicMock
     ) -> None:
         """Test that BaseServiceHandler can be inherited properly."""
-        from custom_components.simple_inventory.services.base_service import (
+        from custom_components.simple_inventory_enhanced.services.base_service import (
             BaseServiceHandler,
         )
 

@@ -8,7 +8,7 @@ from homeassistant import data_entry_flow
 from homeassistant.core import HomeAssistant
 from typing_extensions import Self
 
-from custom_components.simple_inventory.config_flow import (
+from custom_components.simple_inventory_enhanced.config_flow import (
     OptionsFlowHandler,
     SimpleInventoryConfigFlow,
     clean_inventory_name,
@@ -19,7 +19,7 @@ from custom_components.simple_inventory.config_flow import (
 def mock_setup_entry() -> Generator[MagicMock, None, None]:
     """Mock setting up a config entry."""
     with patch(
-        "custom_components.simple_inventory.async_setup_entry",
+        "custom_components.simple_inventory_enhanced.async_setup_entry",
         return_value=True,
     ) as mock_setup:
         yield mock_setup
@@ -183,7 +183,7 @@ async def test_add_inventory_checked_triggers_install(
     mock_current_entries.return_value = []
 
     with patch(
-        "custom_components.simple_inventory.config_flow.async_install_voice_sentences",
+        "custom_components.simple_inventory_enhanced.config_flow.async_install_voice_sentences",
         new=AsyncMock(return_value=True),
     ) as mock_install:
         result = await flow.async_step_add_inventory(
@@ -212,7 +212,7 @@ async def test_add_inventory_unchecked_skips_install(
     mock_current_entries.return_value = []
 
     with patch(
-        "custom_components.simple_inventory.config_flow.async_install_voice_sentences",
+        "custom_components.simple_inventory_enhanced.config_flow.async_install_voice_sentences",
         new=AsyncMock(return_value=True),
     ) as mock_install:
         result = await flow.async_step_add_inventory(
@@ -313,7 +313,7 @@ async def test_options_flow_checked_triggers_install(hass: HomeAssistant) -> Non
     handler.hass.config_entries.async_entries = MagicMock(return_value=[])
 
     with patch(
-        "custom_components.simple_inventory.config_flow.async_install_voice_sentences",
+        "custom_components.simple_inventory_enhanced.config_flow.async_install_voice_sentences",
         new=AsyncMock(return_value=True),
     ) as mock_install:
         result = await handler.async_step_init(
@@ -447,7 +447,7 @@ class TestCleanInventoryName:
             category: str,
             integrations: set[str],
         ) -> dict[str, str]:
-            return {"component.simple_inventory.common.inventory_word": "inventory"}
+            return {"component.simple_inventory_enhanced.common.inventory_word": "inventory"}
 
         with patch(
             "homeassistant.helpers.translation.async_get_translations",

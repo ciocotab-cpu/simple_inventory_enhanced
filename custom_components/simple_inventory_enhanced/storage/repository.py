@@ -36,6 +36,7 @@ from ..const import (
     FIELD_UNIT,
     INVENTORY_ITEMS,
     INVENTORY_NAME,
+    LEGACY_STORAGE_KEY,
     STORAGE_KEY,
     STORAGE_VERSION,
     compute_quantity_needed,
@@ -45,6 +46,8 @@ _LOGGER = logging.getLogger(__name__)
 
 SCHEMA_VERSION = 4
 LEGACY_MIGRATION_FLAG = "legacy_migrated"
+LEGACY_DATABASE_FILENAME = "simple_inventory.db"
+DATABASE_FILENAME = "simple_inventory_enhanced.db"
 
 
 class InventoryRepository:
@@ -52,9 +55,14 @@ class InventoryRepository:
 
     _migration_lock: asyncio.Lock = asyncio.Lock()
 
-    def __init__(self, hass: HomeAssistant, db_filename: str = "simple_inventory.db") -> None:
+    def __init__(self, hass: HomeAssistant, db_filename: str = DATABASE_FILENAME) -> None:
         self._hass = hass
         self._db_path = Path(hass.config.path(db_filename))
+        self._legacy_db_path = (
+            Path(hass.config.path(LEGACY_DATABASE_FILENAME))
+            if db_filename == DATABASE_FILENAME
+            else None
+        )
         self._conn: aiosqlite.Connection | None = None
         self._lock = asyncio.Lock()
 
@@ -62,7 +70,29 @@ class InventoryRepository:
         """Open DB, ensure schema, migrate if needed."""
         async with self._lock:
             if self._conn is None:
-                self._conn = await aiosqlite.connect(self._db_path)
+                if (
+                    self._legacy_db_path is not None
+                    and self._legacy_db_path.is_file()
+                    and not self._db_path.exists()
+                ):
+                    legacy_connection = await aiosqlite.connect(self._legacy_db_path)
+                    self._conn = await aiosqlite.connect(self._db_path)
+                    try:
+                        await legacy_connection.backup(self._conn)
+                        await self._conn.commit()
+                    except Exception:
+                        await self._conn.close()
+                        self._conn = None
+                        raise
+                    finally:
+                        await legacy_connection.close()
+                    _LOGGER.info(
+                        "Migrated legacy database %s to %s",
+                        self._legacy_db_path,
+                        self._db_path,
+                    )
+                else:
+                    self._conn = await aiosqlite.connect(self._db_path)
                 self._conn.row_factory = aiosqlite.Row
                 _LOGGER.debug("Opened Simple Inventory database at %s", self._db_path)
                 await self._conn.execute("PRAGMA foreign_keys = ON")
@@ -98,6 +128,9 @@ class InventoryRepository:
 
         store = Store[dict[str, Any]](self._hass, STORAGE_VERSION, STORAGE_KEY)
         legacy_data = await store.async_load()
+        if not legacy_data:
+            legacy_store = Store[dict[str, Any]](self._hass, STORAGE_VERSION, LEGACY_STORAGE_KEY)
+            legacy_data = await legacy_store.async_load()
 
         if not legacy_data:
             await self._conn.execute(

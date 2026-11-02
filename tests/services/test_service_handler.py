@@ -8,8 +8,8 @@ import pytest
 from homeassistant.exceptions import ServiceValidationError
 from typing_extensions import Self
 
-from custom_components.simple_inventory.const import DOMAIN
-from custom_components.simple_inventory.services import ServiceHandler
+from custom_components.simple_inventory_enhanced.const import DOMAIN
+from custom_components.simple_inventory_enhanced.services import ServiceHandler
 
 
 class TestServiceHandler:
@@ -44,10 +44,10 @@ class TestServiceHandler:
         """Test ServiceHandler initialization."""
         with (
             patch(
-                "custom_components.simple_inventory.services.InventoryService"
+                "custom_components.simple_inventory_enhanced.services.InventoryService"
             ) as mock_inventory_service,
             patch(
-                "custom_components.simple_inventory.services.QuantityService"
+                "custom_components.simple_inventory_enhanced.services.QuantityService"
             ) as mock_quantity_service,
         ):
             service_handler = ServiceHandler(mock_hass, mock_todo_manager)
@@ -71,9 +71,9 @@ class TestServiceHandler:
         """Test async_add_item delegates to inventory service."""
         with (
             patch(
-                "custom_components.simple_inventory.services.InventoryService"
+                "custom_components.simple_inventory_enhanced.services.InventoryService"
             ) as mock_inventory_service,
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
         ):
             mock_inventory_instance = MagicMock()
             mock_inventory_instance.async_add_item = AsyncMock()
@@ -94,9 +94,9 @@ class TestServiceHandler:
         """Test async_remove_item delegates to inventory service."""
         with (
             patch(
-                "custom_components.simple_inventory.services.InventoryService"
+                "custom_components.simple_inventory_enhanced.services.InventoryService"
             ) as mock_inventory_service,
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
         ):
             mock_inventory_instance = MagicMock()
             mock_inventory_instance.async_remove_item = AsyncMock()
@@ -117,9 +117,9 @@ class TestServiceHandler:
         """Test async_update_item delegates to inventory service."""
         with (
             patch(
-                "custom_components.simple_inventory.services.InventoryService"
+                "custom_components.simple_inventory_enhanced.services.InventoryService"
             ) as mock_inventory_service,
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
         ):
             mock_inventory_instance = MagicMock()
             mock_inventory_instance.async_update_item = AsyncMock()
@@ -139,9 +139,9 @@ class TestServiceHandler:
     ) -> None:
         """Test async_increment_item delegates to quantity service."""
         with (
-            patch("custom_components.simple_inventory.services.InventoryService"),
+            patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
             patch(
-                "custom_components.simple_inventory.services.QuantityService"
+                "custom_components.simple_inventory_enhanced.services.QuantityService"
             ) as mock_quantity_service,
         ):
             mock_quantity_instance = MagicMock()
@@ -162,9 +162,9 @@ class TestServiceHandler:
     ) -> None:
         """Test async_decrement_item delegates to quantity service."""
         with (
-            patch("custom_components.simple_inventory.services.InventoryService"),
+            patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
             patch(
-                "custom_components.simple_inventory.services.QuantityService"
+                "custom_components.simple_inventory_enhanced.services.QuantityService"
             ) as mock_quantity_service,
         ):
             mock_quantity_instance = MagicMock()
@@ -186,9 +186,9 @@ class TestServiceHandler:
         """Test async_get_items fires a result event."""
         with (
             patch(
-                "custom_components.simple_inventory.services.InventoryService"
+                "custom_components.simple_inventory_enhanced.services.InventoryService"
             ) as mock_inventory_service,
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
         ):
             mock_inventory_instance = MagicMock()
             mock_inventory_instance.async_get_items = AsyncMock(return_value={"items": []})
@@ -213,9 +213,9 @@ class TestServiceHandler:
         """Test async_get_items_from_all_inventories fires a result event."""
         with (
             patch(
-                "custom_components.simple_inventory.services.InventoryService"
+                "custom_components.simple_inventory_enhanced.services.InventoryService"
             ) as mock_inventory_service,
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
         ):
             mock_inventory_instance = MagicMock()
             mock_inventory_instance.async_get_items_from_all_inventories = AsyncMock(
@@ -255,8 +255,8 @@ class TestServiceHandler:
         }
 
         with (
-            patch("custom_components.simple_inventory.services.InventoryService"),
-            patch("custom_components.simple_inventory.services.QuantityService") as mock_qs_cls,
+            patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService") as mock_qs_cls,
         ):
             mock_qs_cls.return_value = mock_quantity_instance
             handler = ServiceHandler(mock_hass, mock_todo_manager)
@@ -286,10 +286,10 @@ class TestServiceHandler:
         call.data = {"inventory_id": "kitchen"}
 
         with (
-            patch("custom_components.simple_inventory.services.InventoryService"),
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
             patch(
-                "custom_components.simple_inventory.services.get_coordinators",
+                "custom_components.simple_inventory_enhanced.services.get_coordinators",
                 return_value={"kitchen": mock_coordinator},
             ),
         ):
@@ -315,10 +315,10 @@ class TestServiceHandler:
         call.data = {"inventory_id": "kitchen", "window_days": 30}
 
         with (
-            patch("custom_components.simple_inventory.services.InventoryService"),
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
             patch(
-                "custom_components.simple_inventory.services.get_coordinators",
+                "custom_components.simple_inventory_enhanced.services.get_coordinators",
                 return_value={"kitchen": mock_coordinator},
             ),
         ):
@@ -340,10 +340,10 @@ class TestServiceHandler:
         call.data = {"inventory_id": "missing"}
 
         with (
-            patch("custom_components.simple_inventory.services.InventoryService"),
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
             patch(
-                "custom_components.simple_inventory.services.get_coordinators",
+                "custom_components.simple_inventory_enhanced.services.get_coordinators",
                 return_value={},
             ),
         ):
@@ -362,10 +362,10 @@ class TestServiceHandler:
         call.data = {"barcode": "012345678901"}
 
         with (
-            patch("custom_components.simple_inventory.services.InventoryService"),
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
             patch(
-                "custom_components.simple_inventory.services.get_coordinators",
+                "custom_components.simple_inventory_enhanced.services.get_coordinators",
                 return_value={},
             ),
         ):
@@ -384,10 +384,10 @@ class TestServiceHandler:
         call.data = {"inventory_id": "missing", "name": "Milk"}
 
         with (
-            patch("custom_components.simple_inventory.services.InventoryService"),
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
             patch(
-                "custom_components.simple_inventory.services.get_coordinators",
+                "custom_components.simple_inventory_enhanced.services.get_coordinators",
                 return_value={},
             ),
         ):
@@ -409,10 +409,10 @@ class TestServiceHandler:
         call.data = {"inventory_id": "kitchen", "name": "Ghost Item"}
 
         with (
-            patch("custom_components.simple_inventory.services.InventoryService"),
-            patch("custom_components.simple_inventory.services.QuantityService"),
+            patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
+            patch("custom_components.simple_inventory_enhanced.services.QuantityService"),
             patch(
-                "custom_components.simple_inventory.services.get_coordinators",
+                "custom_components.simple_inventory_enhanced.services.get_coordinators",
                 return_value={"kitchen": mock_coordinator},
             ),
         ):
@@ -422,13 +422,13 @@ class TestServiceHandler:
 
     def test_exports(self: Self) -> None:
         """Test that __all__ exports are correct."""
-        from custom_components.simple_inventory.services import __all__
+        from custom_components.simple_inventory_enhanced.services import __all__
 
         assert __all__ == ["ServiceHandler", "InventoryService", "QuantityService"]
 
     def test_import_structure(self: Self) -> None:
         """Test that imports work correctly."""
-        from custom_components.simple_inventory.services import (
+        from custom_components.simple_inventory_enhanced.services import (
             InventoryService,
             QuantityService,
             ServiceHandler,

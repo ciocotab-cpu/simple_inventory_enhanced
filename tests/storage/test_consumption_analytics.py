@@ -10,8 +10,8 @@ from typing import Any
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.simple_inventory.const import FIELD_NAME, FIELD_QUANTITY
-from custom_components.simple_inventory.storage.repository import InventoryRepository
+from custom_components.simple_inventory_enhanced.const import FIELD_NAME, FIELD_QUANTITY
+from custom_components.simple_inventory_enhanced.storage.repository import InventoryRepository
 
 
 @pytest.fixture

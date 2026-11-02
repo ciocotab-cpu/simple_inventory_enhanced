@@ -17,7 +17,7 @@ from homeassistant.util import language as language_util
 _LOGGER = logging.getLogger(__name__)
 
 _BUNDLED_ROOT = Path(__file__).parent / "data" / "custom_sentences"
-_FILENAME = "simple_inventory.yaml"
+_FILENAME = "simple_inventory_enhanced.yaml"
 
 
 def _discover_bundled_languages() -> frozenset[str]:

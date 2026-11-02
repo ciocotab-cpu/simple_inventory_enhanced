@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.simple_inventory.providers.lookup import (
+from custom_components.simple_inventory_enhanced.providers.lookup import (
     async_lookup_barcode_all_providers,
 )
 
@@ -36,7 +36,7 @@ class TestAsyncLookupBarcodeAllProviders:
         ]
 
         with patch(
-            "custom_components.simple_inventory.providers.lookup.get_all_providers",
+            "custom_components.simple_inventory_enhanced.providers.lookup.get_all_providers",
             return_value=providers,
         ):
             results = await async_lookup_barcode_all_providers(hass_mock, "123456")
@@ -58,7 +58,7 @@ class TestAsyncLookupBarcodeAllProviders:
         ]
 
         with patch(
-            "custom_components.simple_inventory.providers.lookup.get_all_providers",
+            "custom_components.simple_inventory_enhanced.providers.lookup.get_all_providers",
             return_value=providers,
         ):
             results = await async_lookup_barcode_all_providers(hass_mock, "123456")
@@ -76,7 +76,7 @@ class TestAsyncLookupBarcodeAllProviders:
         ]
 
         with patch(
-            "custom_components.simple_inventory.providers.lookup.get_all_providers",
+            "custom_components.simple_inventory_enhanced.providers.lookup.get_all_providers",
             return_value=providers,
         ):
             results = await async_lookup_barcode_all_providers(hass_mock, "000000")
@@ -90,7 +90,7 @@ class TestAsyncLookupBarcodeAllProviders:
         ]
 
         with patch(
-            "custom_components.simple_inventory.providers.lookup.get_all_providers",
+            "custom_components.simple_inventory_enhanced.providers.lookup.get_all_providers",
             return_value=providers,
         ):
             results = await async_lookup_barcode_all_providers(hass_mock, "123456")
@@ -101,7 +101,7 @@ class TestAsyncLookupBarcodeAllProviders:
 
     async def test_no_providers_returns_empty(self, hass_mock: MagicMock) -> None:
         with patch(
-            "custom_components.simple_inventory.providers.lookup.get_all_providers",
+            "custom_components.simple_inventory_enhanced.providers.lookup.get_all_providers",
             return_value=[],
         ):
             results = await async_lookup_barcode_all_providers(hass_mock, "123456")
@@ -115,7 +115,7 @@ class TestAsyncLookupBarcodeAllProviders:
         ]
 
         with patch(
-            "custom_components.simple_inventory.providers.lookup.get_all_providers",
+            "custom_components.simple_inventory_enhanced.providers.lookup.get_all_providers",
             return_value=providers,
         ):
             await async_lookup_barcode_all_providers(hass_mock, "123456")
@@ -130,7 +130,7 @@ class TestAsyncLookupBarcodeAllProviders:
         ]
 
         with patch(
-            "custom_components.simple_inventory.providers.lookup.get_all_providers",
+            "custom_components.simple_inventory_enhanced.providers.lookup.get_all_providers",
             return_value=providers,
         ):
             results = await async_lookup_barcode_all_providers(hass_mock, "123456")

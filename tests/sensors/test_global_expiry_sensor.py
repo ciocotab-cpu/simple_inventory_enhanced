@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.simple_inventory.sensors import GlobalItemsExpiringSoonSensor
+from custom_components.simple_inventory_enhanced.sensors import GlobalItemsExpiringSoonSensor
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def global_expiry_sensor(
 
 def test_init(global_expiry_sensor: GlobalItemsExpiringSoonSensor) -> None:
     assert global_expiry_sensor._attr_name == "All Items Expiring Soon"
-    assert global_expiry_sensor._attr_unique_id == "simple_inventory_all_expiring_items"
+    assert global_expiry_sensor._attr_unique_id == "simple_inventory_enhanced_all_expiring_items"
     assert global_expiry_sensor._attr_native_unit_of_measurement == "items"
 
 

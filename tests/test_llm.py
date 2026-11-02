@@ -10,12 +10,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import intent
 from homeassistant.helpers.llm import LLM_API_ASSIST, IntentTool, LLMContext
 
-from custom_components.simple_inventory.intents import (
+from custom_components.simple_inventory_enhanced.intents import (
     INTENT_TYPES,
     async_register_intents,
     async_unregister_intents,
 )
-from custom_components.simple_inventory.llm import async_get_tools
+from custom_components.simple_inventory_enhanced.llm import async_get_tools
 
 
 def _llm_context(assistant: str = "conversation") -> LLMContext:

@@ -9,7 +9,7 @@ import pytest
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 
-from custom_components.simple_inventory.voice_sentences import (
+from custom_components.simple_inventory_enhanced.voice_sentences import (
     async_install_voice_sentences,
     can_offer_voice_sentences,
 )
@@ -50,7 +50,7 @@ async def test_install_writes_file_and_reloads(hass_with_tmp_config: HomeAssista
 
     assert result is True
     target = Path(
-        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory.yaml")
+        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory_enhanced.yaml")
     )
     assert target.is_file()
     assert "SimpleInventoryRemoveItem" in target.read_text()
@@ -68,7 +68,7 @@ async def test_install_never_overwrites_existing_file(hass_with_tmp_config: Home
     hass_with_tmp_config.services.async_register("conversation", "reload", _reload)
 
     target = Path(
-        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory.yaml")
+        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory_enhanced.yaml")
     )
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text("language: en\n# my own custom content\n")
@@ -102,14 +102,14 @@ async def test_install_handles_write_failure_gracefully(
     hass_with_tmp_config.config.language = "en"
 
     with patch(
-        "custom_components.simple_inventory.voice_sentences._copy_template",
+        "custom_components.simple_inventory_enhanced.voice_sentences._copy_template",
         side_effect=OSError("disk full"),
     ):
         result = await async_install_voice_sentences(hass_with_tmp_config)
 
     assert result is False
     target = Path(
-        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory.yaml")
+        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory_enhanced.yaml")
     )
     assert not target.is_file()
 
@@ -131,7 +131,7 @@ async def test_install_survives_reload_service_failure(
 
     assert result is True
     target = Path(
-        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory.yaml")
+        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory_enhanced.yaml")
     )
     assert target.is_file()
 
@@ -159,11 +159,11 @@ async def test_install_writes_to_matched_base_language_for_variant(
 
     assert result is True
     target = Path(
-        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory.yaml")
+        hass_with_tmp_config.config.path("custom_sentences", "en", "simple_inventory_enhanced.yaml")
     )
     assert target.is_file()
     variant_target = Path(
-        hass_with_tmp_config.config.path("custom_sentences", "en-US", "simple_inventory.yaml")
+        hass_with_tmp_config.config.path("custom_sentences", "en-US", "simple_inventory_enhanced.yaml")
     )
     assert not variant_target.exists()
     assert reload_calls == [{"language": "en"}]
@@ -185,7 +185,7 @@ async def test_install_toctou_race_treated_as_already_present(
     hass_with_tmp_config.services.async_register("conversation", "reload", _reload)
 
     with patch(
-        "custom_components.simple_inventory.voice_sentences._copy_template",
+        "custom_components.simple_inventory_enhanced.voice_sentences._copy_template",
         side_effect=FileExistsError(),
     ):
         result = await async_install_voice_sentences(hass_with_tmp_config)
@@ -197,10 +197,10 @@ async def test_install_toctou_race_treated_as_already_present(
 def test_copy_template_raises_file_exists_error_without_touching_content(
     tmp_path: Path,
 ) -> None:
-    from custom_components.simple_inventory.voice_sentences import _BUNDLED_ROOT, _copy_template
+    from custom_components.simple_inventory_enhanced.voice_sentences import _BUNDLED_ROOT, _copy_template
 
-    source = _BUNDLED_ROOT / "en" / "simple_inventory.yaml"
-    target = tmp_path / "simple_inventory.yaml"
+    source = _BUNDLED_ROOT / "en" / "simple_inventory_enhanced.yaml"
+    target = tmp_path / "simple_inventory_enhanced.yaml"
     target.write_text("already here, must survive")
 
     with pytest.raises(FileExistsError):

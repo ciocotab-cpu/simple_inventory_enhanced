@@ -10,7 +10,7 @@ import pytest
 from homeassistant.core import EventBus, HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.simple_inventory.const import (
+from custom_components.simple_inventory_enhanced.const import (
     DOMAIN,
     EVENT_ITEM_ADDED,
     EVENT_ITEM_DEPLETED,
@@ -24,7 +24,7 @@ from custom_components.simple_inventory.const import (
     FIELD_QUANTITY,
     FIELD_TODO_QUANTITY_PLACEMENT,
 )
-from custom_components.simple_inventory.coordinator import (
+from custom_components.simple_inventory_enhanced.coordinator import (
     SimpleInventoryCoordinator,
     _compute_avg_restock_days,
 )

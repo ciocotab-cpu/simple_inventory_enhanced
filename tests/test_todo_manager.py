@@ -7,14 +7,14 @@ import pytest
 from homeassistant.components.todo import TodoItem, TodoItemStatus
 from typing_extensions import Self
 
-from custom_components.simple_inventory.const import (
+from custom_components.simple_inventory_enhanced.const import (
     EVENT_ITEM_ADDED_TO_LIST,
     EVENT_ITEM_REMOVED_FROM_LIST,
     FIELD_DESIRED_QUANTITY,
     FIELD_TODO_QUANTITY_PLACEMENT,
 )
-from custom_components.simple_inventory.todo_manager import TodoManager
-from custom_components.simple_inventory.types import InventoryItem
+from custom_components.simple_inventory_enhanced.todo_manager import TodoManager
+from custom_components.simple_inventory_enhanced.types import InventoryItem
 
 
 class TestTodoManager:

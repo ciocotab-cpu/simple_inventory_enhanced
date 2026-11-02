@@ -22,7 +22,7 @@ class GlobalExpiredItemsSensor(SensorEntity):
         self.hass = hass
         self.coordinator = coordinator
         self._attr_name = "All Expired Items"
-        self._attr_unique_id = "simple_inventory_all_expired_items"
+        self._attr_unique_id = "simple_inventory_enhanced_all_expired_items"
         self._attr_icon = "mdi:calendar-remove"
         self._attr_native_unit_of_measurement = "items"
         self._attr_extra_state_attributes: dict[str, Any] = {}

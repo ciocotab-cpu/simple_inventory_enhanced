@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.simple_inventory.providers.open_pet_food_facts import (
+from custom_components.simple_inventory_enhanced.providers.open_pet_food_facts import (
     OpenPetFoodFactsProvider,
 )
 
@@ -51,7 +51,7 @@ class TestOpenPetFoodFactsProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.openfoodfacts.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.openfoodfacts.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("4567890123456")
@@ -70,7 +70,7 @@ class TestOpenPetFoodFactsProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.openfoodfacts.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.openfoodfacts.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("0000000000000")

@@ -3,8 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-MANIFEST="custom_components/simple_inventory/manifest.json"
-SETUP="custom_components/simple_inventory/setup.py"
+MANIFEST="custom_components/simple_inventory_enhanced/manifest.json"
+SETUP="custom_components/simple_inventory_enhanced/setup.py"
 VERSION_FILES=("$MANIFEST" "$SETUP")
 
 write_version_files() {

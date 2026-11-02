@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 import voluptuous as vol
 
-from custom_components.simple_inventory.schemas.service_schemas import (
+from custom_components.simple_inventory_enhanced.schemas.service_schemas import (
     ADD_ITEM_SCHEMA,
     GET_INVENTORY_CONSUMPTION_RATES_SCHEMA,
     GET_ITEMS_SCHEMA,

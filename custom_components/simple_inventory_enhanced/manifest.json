@@ -1,0 +1,21 @@
+{
+  "domain": "simple_inventory_enhanced",
+  "name": "Simple Inventory Enhanced",
+  "codeowners": [
+    "@ciocotab-cpu"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "lovelace",
+    "websocket_api"
+  ],
+  "documentation": "https://github.com/ciocotab-cpu/simple_inventory_enhanced",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/ciocotab-cpu/simple_inventory_enhanced/issues",
+  "requirements": [
+    "aiosqlite==0.22.1"
+  ],
+  "version": "0.6.0"
+}

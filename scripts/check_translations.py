@@ -13,7 +13,7 @@ JSONObject = Dict[str, JSONValue]
 JSONArray = List[JSONValue]
 
 ROOT = Path(__file__).resolve().parents[1]
-TRANSLATIONS = ROOT / "custom_components" / "simple_inventory" / "translations"
+TRANSLATIONS = ROOT / "custom_components" / "simple_inventory_enhanced" / "translations"
 
 
 def flatten(data: Mapping[str, JSONValue], prefix: str = "") -> Iterator[str]:

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.simple_inventory.services.resolvers import (
+from custom_components.simple_inventory_enhanced.services.resolvers import (
     resolve_inventory_id,
     resolve_item_name,
 )

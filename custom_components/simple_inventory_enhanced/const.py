@@ -1,7 +1,8 @@
 from typing import Final
 
-DOMAIN: Final = "simple_inventory"
+DOMAIN: Final = "simple_inventory_enhanced"
 STORAGE_KEY: Final = f"{DOMAIN}.storage"
+LEGACY_STORAGE_KEY: Final = "simple_inventory.storage"
 STORAGE_VERSION: Final = 1
 
 SERVICE_ADD_ITEM: Final = "add_item"
