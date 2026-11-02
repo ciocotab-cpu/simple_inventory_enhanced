@@ -1,6 +1,6 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
-# Simple Inventory
+# Simple Inventory Enhanced
 
 A Home Assistant custom integration for managing household inventories. Track items across multiple inventories with expiration dates, automatic todo list integration, barcode support, item aliases, locations, categories, and change history.
 
@@ -24,7 +24,7 @@ A Home Assistant custom integration for managing household inventories. Track it
 or:
 
 1. Add this repository to HACS
-2. Install "Simple Inventory"
+2. Install "Simple Inventory Enhanced"
 3. Install the companion card: [Simple Inventory Enhanced Card](https://github.com/ciocotab-cpu/simple-inventory-enhanced-card)
 4. Restart Home Assistant
 
@@ -99,10 +99,6 @@ Automatically add items to a Home Assistant todo list when stock drops below a t
 - When `desired_quantity = 0` (threshold mode): the todo shows `threshold - quantity + 1`, updates live on each change, and the item is removed when `quantity > threshold`
 
 **Note:** The built-in `todo.shopping_list` does not support item descriptions, so description-based features only work with other todo list integrations.
-
-### Description with Inventory ID
-
-Enable `auto_add_id_to_description_enabled` to append the inventory ID to item descriptions. This is useful when scanning barcodes from todo lists — the ID lets automations route the item back to the correct inventory. See [this issue](https://github.com/blaineventurine/simple_inventory/issues/19) for the use case.
 
 ### Barcodes
 
