@@ -11,19 +11,19 @@ import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, ServiceCall
 
-from custom_components.simple_inventory.const import DOMAIN
-from custom_components.simple_inventory.services import ServiceHandler
-from custom_components.simple_inventory.services.base_service import (
+from custom_components.simple_inventory_enhanced.const import DOMAIN
+from custom_components.simple_inventory_enhanced.services import ServiceHandler
+from custom_components.simple_inventory_enhanced.services.base_service import (
     BaseServiceHandler,
 )
-from custom_components.simple_inventory.services.inventory_service import (
+from custom_components.simple_inventory_enhanced.services.inventory_service import (
     InventoryService,
 )
-from custom_components.simple_inventory.services.quantity_service import (
+from custom_components.simple_inventory_enhanced.services.quantity_service import (
     QuantityService,
 )
-from custom_components.simple_inventory.todo_manager import TodoManager
-from custom_components.simple_inventory.types import InventoryItem
+from custom_components.simple_inventory_enhanced.todo_manager import TodoManager
+from custom_components.simple_inventory_enhanced.types import InventoryItem
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -34,7 +34,7 @@ def hass_mock() -> MagicMock:
     """Create a mock Home Assistant instance."""
     hass_mock = MagicMock()
     hass_mock.data = {
-        "simple_inventory": {
+        "simple_inventory_enhanced": {
             "coordinators": {},
             "repository": MagicMock(),
         }
@@ -145,7 +145,7 @@ def quantity_service(
     mock_todo_manager: TodoManager,
     mock_coordinator: MagicMock,
 ) -> QuantityService:
-    hass.data["simple_inventory"]["coordinators"]["kitchen"] = mock_coordinator
+    hass.data["simple_inventory_enhanced"]["coordinators"]["kitchen"] = mock_coordinator
     return QuantityService(hass, mock_todo_manager)
 
 

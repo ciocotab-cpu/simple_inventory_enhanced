@@ -53,7 +53,7 @@ testpaths = ["tests"]
 addopts = [
   "-v",
   "--tb=short",
-  "--cov=custom_components.simple_inventory",
+  "--cov=custom_components.simple_inventory_enhanced",
   "--cov-report=term-missing",
   "--cov-report=html:htmlcov",
   "--cov-report=xml",
@@ -73,7 +73,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["custom_components/simple_inventory"]
+source = ["custom_components/simple_inventory_enhanced"]
 omit = ["*/tests/*", "*/__pycache__/*", "*/venv/*", "*/env/*", ".tox/*"]
 
 [tool.coverage.report]
@@ -96,7 +96,7 @@ skip_covered = false
 directory = "htmlcov"
 
 [tool.mutmut]
-paths_to_mutate = ["custom_components/simple_inventory/"]
+paths_to_mutate = ["custom_components/simple_inventory_enhanced/"]
 tests_dir = ["tests/"]
 runner = "python -m pytest tests/ -x --tb=no -q"
 backup = false

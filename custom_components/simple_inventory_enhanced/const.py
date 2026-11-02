@@ -1,6 +1,6 @@
 from typing import Final
 
-DOMAIN: Final = "simple_inventory"
+DOMAIN: Final = "simple_inventory_enhanced"
 STORAGE_KEY: Final = f"{DOMAIN}.storage"
 STORAGE_VERSION: Final = 1
 
