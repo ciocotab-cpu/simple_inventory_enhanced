@@ -372,7 +372,7 @@ def full_service_setup(
     mock_coordinator: MagicMock,
     mock_todo_manager: TodoManager,
 ) -> dict[str, Any]:
-    hass.data["simple_inventory"]["coordinators"]["kitchen"] = mock_coordinator
+    hass.data["simple_inventory_enhanced"]["coordinators"]["kitchen"] = mock_coordinator
 
     return {
         "hass": hass,
@@ -386,7 +386,7 @@ def full_service_setup(
 @pytest.fixture
 def domain() -> str:
     """Return the domain constant."""
-    return "simple_inventory"
+    return "simple_inventory_enhanced"
 
 
 @pytest.fixture
@@ -426,7 +426,7 @@ def mock_entity_registry_with_expiry_sensor() -> MagicMock:
     entity_registry = MagicMock()
     expiry_entity = MagicMock()
     expiry_entity.entity_id = "sensor.items_expiring_soon"
-    expiry_entity.platform = "simple_inventory"
+    expiry_entity.platform = "simple_inventory_enhanced"
     entity_registry.entities = {"expiry_sensor_key": expiry_entity}
 
     return entity_registry

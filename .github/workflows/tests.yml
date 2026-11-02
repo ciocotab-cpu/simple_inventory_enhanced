@@ -68,7 +68,7 @@ jobs:
       - name: Run tests with coverage
         run: |
           pytest tests/ \
-            --cov=custom_components/simple_inventory \
+            --cov=custom_components/simple_inventory_enhanced/ \
             --cov-report=xml \
             --cov-report=html \
             --cov-report=term-missing \

@@ -5,8 +5,8 @@
 # Inventory (Settings -> Devices & Services -> Simple Inventory), copy it
 # manually into your Home Assistant config directory:
 #
-#   cp custom_components/simple_inventory/data/custom_sentences/en/simple_inventory.yaml \
-#      <config>/custom_sentences/en/simple_inventory.yaml
+#   cp custom_components/simple_inventory_enhanced/data/custom_sentences/en/simple_inventory_enhanced.yaml \
+#      <config>/custom_sentences/en/simple_inventory_enhanced.yaml
 #
 # Then reload custom sentences: Developer Tools -> Actions, call the
 # `conversation.reload` action (or restart Home Assistant). This only

@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from homeassistant import config_entries
 
-from custom_components.simple_inventory.const import DOMAIN
-from custom_components.simple_inventory.sensor import async_setup_entry
+from custom_components.simple_inventory_enhanced.const import DOMAIN
+from custom_components.simple_inventory_enhanced.sensor import async_setup_entry
 
 
 class TestSensorPlatform:
@@ -51,13 +51,13 @@ class TestSensorPlatform:
 
         with (
             patch(
-                "custom_components.simple_inventory.sensor.InventorySensor"
+                "custom_components.simple_inventory_enhanced.sensor.InventorySensor"
             ) as mock_inventory_sensor,
             patch(
-                "custom_components.simple_inventory.sensor.ItemsExpiringSoonSensor"
+                "custom_components.simple_inventory_enhanced.sensor.ItemsExpiringSoonSensor"
             ) as mock_expiry_sensor,
             patch(
-                "custom_components.simple_inventory.sensor.ExpiredItemsSensor"
+                "custom_components.simple_inventory_enhanced.sensor.ExpiredItemsSensor"
             ) as mock_expired_sensor,
         ):
             await async_setup_entry(mock_hass, entry, mock_add_entities)
@@ -106,13 +106,13 @@ class TestSensorPlatform:
 
         with (
             patch(
-                "custom_components.simple_inventory.sensor.InventorySensor"
+                "custom_components.simple_inventory_enhanced.sensor.InventorySensor"
             ) as mock_inventory_sensor,
             patch(
-                "custom_components.simple_inventory.sensor.ItemsExpiringSoonSensor"
+                "custom_components.simple_inventory_enhanced.sensor.ItemsExpiringSoonSensor"
             ) as mock_expiry_sensor,
             patch(
-                "custom_components.simple_inventory.sensor.ExpiredItemsSensor"
+                "custom_components.simple_inventory_enhanced.sensor.ExpiredItemsSensor"
             ) as mock_expired_sensor,
         ):
             await async_setup_entry(mock_hass, entry, mock_add_entities)
@@ -154,16 +154,16 @@ class TestSensorPlatform:
 
         with (
             patch(
-                "custom_components.simple_inventory.sensor.InventorySensor"
+                "custom_components.simple_inventory_enhanced.sensor.InventorySensor"
             ) as mock_inventory_sensor,
             patch(
-                "custom_components.simple_inventory.sensor.ItemsExpiringSoonSensor"
+                "custom_components.simple_inventory_enhanced.sensor.ItemsExpiringSoonSensor"
             ) as mock_expiry_sensor,
             patch(
-                "custom_components.simple_inventory.sensor.GlobalItemsExpiringSoonSensor"
+                "custom_components.simple_inventory_enhanced.sensor.GlobalItemsExpiringSoonSensor"
             ) as mock_global_sensor,
             patch(
-                "custom_components.simple_inventory.sensor.GlobalExpiredItemsSensor"
+                "custom_components.simple_inventory_enhanced.sensor.GlobalExpiredItemsSensor"
             ) as mock_global_expired_sensor,
         ):
             await async_setup_entry(mock_hass, entry, mock_add_entities)
@@ -191,13 +191,13 @@ class TestSensorPlatform:
 
         with (
             patch(
-                "custom_components.simple_inventory.sensor.InventorySensor"
+                "custom_components.simple_inventory_enhanced.sensor.InventorySensor"
             ) as mock_inventory_sensor,
             patch(
-                "custom_components.simple_inventory.sensor.ItemsExpiringSoonSensor"
+                "custom_components.simple_inventory_enhanced.sensor.ItemsExpiringSoonSensor"
             ) as mock_expiry_sensor,
             patch(
-                "custom_components.simple_inventory.sensor.GlobalItemsExpiringSoonSensor"
+                "custom_components.simple_inventory_enhanced.sensor.GlobalItemsExpiringSoonSensor"
             ) as mock_global_sensor,
         ):
             await async_setup_entry(mock_hass, entry, mock_add_entities)

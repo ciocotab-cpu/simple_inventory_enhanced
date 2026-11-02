@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.simple_inventory.const import DOMAIN
-from custom_components.simple_inventory.websocket_api import (
+from custom_components.simple_inventory_enhanced.const import DOMAIN
+from custom_components.simple_inventory_enhanced.websocket_api import (
     _handle_export,
     _handle_get_barcode_provider_config,
     _handle_get_history,
@@ -810,7 +810,7 @@ class TestHandleLookupBarcodeProduct:
         hass_mock.data[DOMAIN]["coordinators"]["inv1"] = mock_coordinator_ws
 
         with patch(
-            "custom_components.simple_inventory.websocket_api.async_lookup_barcode_all_providers",
+            "custom_components.simple_inventory_enhanced.websocket_api.async_lookup_barcode_all_providers",
             new_callable=AsyncMock,
         ) as mock_external:
             msg = {"id": 90, "type": f"{DOMAIN}/lookup_barcode_product", "barcode": "123456"}
@@ -849,7 +849,7 @@ class TestHandleLookupBarcodeProduct:
         ]
 
         with patch(
-            "custom_components.simple_inventory.websocket_api.async_lookup_barcode_all_providers",
+            "custom_components.simple_inventory_enhanced.websocket_api.async_lookup_barcode_all_providers",
             new_callable=AsyncMock,
             return_value=results,
         ):
@@ -870,7 +870,7 @@ class TestHandleLookupBarcodeProduct:
         ]
 
         with patch(
-            "custom_components.simple_inventory.websocket_api.async_lookup_barcode_all_providers",
+            "custom_components.simple_inventory_enhanced.websocket_api.async_lookup_barcode_all_providers",
             new_callable=AsyncMock,
             return_value=results,
         ):
@@ -885,7 +885,7 @@ class TestHandleLookupBarcodeProduct:
         self, hass_mock: MagicMock, mock_connection: MagicMock
     ) -> None:
         with patch(
-            "custom_components.simple_inventory.websocket_api.async_lookup_barcode_all_providers",
+            "custom_components.simple_inventory_enhanced.websocket_api.async_lookup_barcode_all_providers",
             new_callable=AsyncMock,
             side_effect=RuntimeError("provider timeout"),
         ):

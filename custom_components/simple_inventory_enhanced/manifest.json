@@ -1,8 +1,8 @@
 {
-  "domain": "simple_inventory",
-  "name": "Simple Inventory",
+  "domain": "simple_inventory_enhanced",
+  "name": "Simple Inventory Enhanced",
   "codeowners": [
-    "@blaineventurine"
+    "@ciocotab-cpu"
   ],
   "config_flow": true,
   "dependencies": [
@@ -10,12 +10,12 @@
     "lovelace",
     "websocket_api"
   ],
-  "documentation": "https://github.com/blaineventurine/simple_inventory",
+  "documentation": "https://github.com/ciocotab-cpu/simple_inventory_enhanced",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/blaineventurine/simple_inventory/issues",
+  "issue_tracker": "https://github.com/ciocotab-cpu/simple_inventory_enhanced/issues",
   "requirements": [
     "aiosqlite==0.22.1"
   ],
-  "version": "0.6.0"
+  "version": "0.0.1"
 }

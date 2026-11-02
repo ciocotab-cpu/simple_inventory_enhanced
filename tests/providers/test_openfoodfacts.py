@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import aiohttp
 import pytest
 
-from custom_components.simple_inventory.providers.openfoodfacts import (
+from custom_components.simple_inventory_enhanced.providers.openfoodfacts import (
     OpenFoodFactsProvider,
     _strip_lang_prefix,
 )
@@ -48,7 +48,7 @@ class TestOpenFoodFactsProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.openfoodfacts.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.openfoodfacts.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("1234567890123")
@@ -67,7 +67,7 @@ class TestOpenFoodFactsProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.openfoodfacts.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.openfoodfacts.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("0000000000000")
@@ -79,7 +79,7 @@ class TestOpenFoodFactsProvider:
         mock_session.get = AsyncMock(side_effect=aiohttp.ClientError("Connection failed"))
 
         with patch(
-            "custom_components.simple_inventory.providers.openfoodfacts.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.openfoodfacts.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("1234567890123")
@@ -92,7 +92,7 @@ class TestOpenFoodFactsProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.openfoodfacts.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.openfoodfacts.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("1234567890123")
@@ -111,7 +111,7 @@ class TestOpenFoodFactsProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.openfoodfacts.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.openfoodfacts.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("1234567890123")
@@ -126,7 +126,7 @@ class TestOpenFoodFactsProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.openfoodfacts.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.openfoodfacts.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("1234567890123")

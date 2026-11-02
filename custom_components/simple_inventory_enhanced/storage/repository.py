@@ -51,7 +51,7 @@ class InventoryRepository:
 
     _migration_lock: asyncio.Lock = asyncio.Lock()
 
-    def __init__(self, hass: HomeAssistant, db_filename: str = "simple_inventory.db") -> None:
+    def __init__(self, hass: HomeAssistant, db_filename: str = "simple_inventory_enhanced.db") -> None:
         self._hass = hass
         self._db_path = Path(hass.config.path(db_filename))
         self._conn: aiosqlite.Connection | None = None

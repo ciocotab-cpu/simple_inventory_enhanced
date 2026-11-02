@@ -64,7 +64,7 @@ jobs:
       - name: Create ZIP for HACS
         run: |
           cd custom_components
-          zip -r ../simple_inventory.zip simple_inventory/
+          zip -r ../simple_inventory_enhanced.zip simple_inventory_enhanced/
 
       - name: Create draft release
         uses: softprops/action-gh-release@v2
@@ -74,4 +74,4 @@ jobs:
           body: ${{ steps.notes.outputs.body }}
           draft: true
           prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
-          files: simple_inventory.zip
+          files: simple_inventory_enhanced.zip

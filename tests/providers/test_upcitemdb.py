@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import aiohttp
 import pytest
 
-from custom_components.simple_inventory.providers.upcitemdb import UPCItemDBProvider
+from custom_components.simple_inventory_enhanced.providers.upcitemdb import UPCItemDBProvider
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ class TestUPCItemDBProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.upcitemdb.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.upcitemdb.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("012345678905")
@@ -65,7 +65,7 @@ class TestUPCItemDBProvider:
         mock_session.get = AsyncMock(return_value=_mock_response({}, status=404))
 
         with patch(
-            "custom_components.simple_inventory.providers.upcitemdb.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.upcitemdb.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("0000000000000")
@@ -77,7 +77,7 @@ class TestUPCItemDBProvider:
         mock_session.get = AsyncMock(return_value=_mock_response({}, status=429))
 
         with patch(
-            "custom_components.simple_inventory.providers.upcitemdb.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.upcitemdb.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("0000000000000")
@@ -89,7 +89,7 @@ class TestUPCItemDBProvider:
         mock_session.get = AsyncMock(side_effect=aiohttp.ClientError("Connection failed"))
 
         with patch(
-            "custom_components.simple_inventory.providers.upcitemdb.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.upcitemdb.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("1234567890123")
@@ -102,7 +102,7 @@ class TestUPCItemDBProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.upcitemdb.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.upcitemdb.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("0000000000000")
@@ -115,7 +115,7 @@ class TestUPCItemDBProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.upcitemdb.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.upcitemdb.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("0000000000000")
@@ -128,7 +128,7 @@ class TestUPCItemDBProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.upcitemdb.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.upcitemdb.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("1234567890123")
@@ -141,7 +141,7 @@ class TestUPCItemDBProvider:
         mock_session.get = AsyncMock(return_value=_mock_response(data))
 
         with patch(
-            "custom_components.simple_inventory.providers.upcitemdb.async_get_clientsession",
+            "custom_components.simple_inventory_enhanced.providers.upcitemdb.async_get_clientsession",
             return_value=mock_session,
         ):
             result = await provider.async_lookup("1234567890123")

@@ -11,8 +11,8 @@ from homeassistant.core import Context, HomeAssistant, ServiceCall, SupportsResp
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import intent
 
-from custom_components.simple_inventory.const import DOMAIN
-from custom_components.simple_inventory.intents import (
+from custom_components.simple_inventory_enhanced.const import DOMAIN
+from custom_components.simple_inventory_enhanced.intents import (
     INTENT_ADD_ITEM,
     INTENT_EXPIRY_COUNT_QUERY,
     INTENT_EXPIRY_LIST_QUERY,
@@ -860,7 +860,7 @@ async def test_expiry_list_intent_no_coordinators_raises_intent_handle_error(
 
 
 def test_format_name_list() -> None:
-    from custom_components.simple_inventory.intents import _format_name_list
+    from custom_components.simple_inventory_enhanced.intents import _format_name_list
 
     assert _format_name_list(["A"]) == "A"
     assert _format_name_list(["A", "B"]) == "A and B"

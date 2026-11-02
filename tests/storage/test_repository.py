@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.simple_inventory.const import (
+from custom_components.simple_inventory_enhanced.const import (
     FIELD_AUTO_ADD_ENABLED,
     FIELD_AUTO_ADD_TO_LIST_QUANTITY,
     FIELD_CATEGORY,
@@ -27,7 +27,7 @@ from custom_components.simple_inventory.const import (
     INVENTORY_ITEMS,
     INVENTORY_NAME,
 )
-from custom_components.simple_inventory.storage.repository import InventoryRepository
+from custom_components.simple_inventory_enhanced.storage.repository import InventoryRepository
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ def hass_with_tmp_config(hass: HomeAssistant, tmp_path: Path) -> HomeAssistant:
 
 @pytest.fixture
 async def repo(hass_with_tmp_config: HomeAssistant) -> AsyncGenerator[InventoryRepository, None]:
-    repository = InventoryRepository(hass_with_tmp_config, db_filename="test_simple_inventory.db")
+    repository = InventoryRepository(hass_with_tmp_config, db_filename="test_simple_inventory_enhanced.db")
     await repository.async_initialize()
     try:
         yield repository
@@ -281,7 +281,7 @@ async def test_legacy_migration_marks_flag_without_data(repo: InventoryRepositor
     fresh = InventoryRepository(hass, db_filename="fresh_migration.db")
 
     with patch(
-        "custom_components.simple_inventory.storage.repository.Store.async_load",
+        "custom_components.simple_inventory_enhanced.storage.repository.Store.async_load",
         new=AsyncMock(return_value=None),
     ):
         await fresh.async_initialize()
@@ -327,7 +327,7 @@ async def test_legacy_migration_imports_items(repo: InventoryRepository) -> None
     }
 
     with patch(
-        "custom_components.simple_inventory.storage.repository.Store.async_load",
+        "custom_components.simple_inventory_enhanced.storage.repository.Store.async_load",
         new=AsyncMock(return_value=legacy_payload),
     ):
         await fresh.async_initialize()
@@ -356,7 +356,7 @@ async def test_legacy_migration_skips_when_flag_already_set(repo: InventoryRepos
     await conn.commit()
 
     with patch(
-        "custom_components.simple_inventory.storage.repository.Store.async_load",
+        "custom_components.simple_inventory_enhanced.storage.repository.Store.async_load",
         new=AsyncMock(side_effect=AssertionError("Should not load legacy store")),
     ):
         # Call migration method again; it should return immediately

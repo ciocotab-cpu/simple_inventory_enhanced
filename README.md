@@ -19,24 +19,24 @@ A Home Assistant custom integration for managing household inventories. Track it
 
 ### Via HACS (Recommended)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=blaineventurine&repository=simple_inventory)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ciocotab-cpu&repository=simple_inventory_enhanced)
 
 or:
 
 1. Add this repository to HACS
 2. Install "Simple Inventory"
-3. Install the companion card: [Simple Inventory Card](https://github.com/blaineventurine/simple-inventory-card)
+3. Install the companion card: [Simple Inventory Enhanced Card](https://github.com/ciocotab-cpu/simple-inventory-enhanced-card)
 4. Restart Home Assistant
 
 ### Manual Installation
 
-1. Copy `custom_components/simple_inventory/` to your Home Assistant `custom_components/` directory
+1. Copy `custom_components/simple_inventory_enhanced/` to your Home Assistant `custom_components/` directory
 2. Restart Home Assistant
 
 ## Frontend Card
 
 This integration works best with the companion Lovelace card:
-**[Simple Inventory Card](https://github.com/blaineventurine/simple-inventory-card)**
+**[Simple Inventory Enhanced Card](https://github.com/ciocotab-cpu/simple-inventory-enhanced-card)**
 
 ## Configuration
 
@@ -249,12 +249,12 @@ Each inventory creates three sensors:
 
 All services are under the `simple_inventory` domain. You can find your inventory ID by going to **Developer Tools -> States** and filtering for "inventory" — the ID is shown in the sensor attributes.
 
-### `simple_inventory.add_item`
+### `simple_inventory_enhanced.add_item`
 
 Add a new item to an inventory.
 
 ```yaml
-service: simple_inventory.add_item
+service: simple_inventory_enhanced.add_item
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
   name: "Frozen Pizza"
@@ -277,23 +277,23 @@ data:
 
 Only `inventory_id` and `name` are required. All other fields are optional.
 
-### `simple_inventory.remove_item`
+### `simple_inventory_enhanced.remove_item`
 
 Remove an item. Specify either `name` or `barcode`.
 
 ```yaml
-service: simple_inventory.remove_item
+service: simple_inventory_enhanced.remove_item
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
   name: "Frozen Pizza"
 ```
 
-### `simple_inventory.increment_item`
+### `simple_inventory_enhanced.increment_item`
 
 Increase an item's quantity. Supports decimal amounts. Optionally pass `price` to update the item's unit price (e.g. when restocking at a new price).
 
 ```yaml
-service: simple_inventory.increment_item
+service: simple_inventory_enhanced.increment_item
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
   name: "Frozen Pizza"
@@ -304,31 +304,31 @@ data:
 You can also use `barcode` instead of `name`:
 
 ```yaml
-service: simple_inventory.increment_item
+service: simple_inventory_enhanced.increment_item
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
   barcode: "012345678901"
   amount: 1
 ```
 
-### `simple_inventory.decrement_item`
+### `simple_inventory_enhanced.decrement_item`
 
 Decrease an item's quantity. Same parameters as `increment_item`.
 
 ```yaml
-service: simple_inventory.decrement_item
+service: simple_inventory_enhanced.decrement_item
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
   name: "Frozen Pizza"
   amount: 1
 ```
 
-### `simple_inventory.update_item`
+### `simple_inventory_enhanced.update_item`
 
 Update any fields on an existing item. Use `old_name` to identify the item (also matches aliases) and `name` for the (possibly new) name. Pass `aliases` to replace all of the item's aliases (empty string clears them).
 
 ```yaml
-service: simple_inventory.update_item
+service: simple_inventory_enhanced.update_item
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
   old_name: "Frozen Pizza"
@@ -339,7 +339,7 @@ data:
   expiry_date: "2026-08-01"
 ```
 
-### `simple_inventory.get_items`
+### `simple_inventory_enhanced.get_items`
 
 Retrieve all items for a specific inventory. Supports `response_variable` for use in automations and scripts.
 
@@ -348,7 +348,7 @@ Specify the inventory by ID or name, but not both.
 **By ID** (recommended — unambiguous):
 
 ```yaml
-service: simple_inventory.get_items
+service: simple_inventory_enhanced.get_items
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
 response_variable: result
@@ -359,7 +359,7 @@ Find your inventory ID in **Developer Tools → States**: filter for your invent
 **By name** (case-insensitive match against the name you gave during setup):
 
 ```yaml
-service: simple_inventory.get_items
+service: simple_inventory_enhanced.get_items
 data:
   inventory_name: "Freezer"
 response_variable: result
@@ -399,12 +399,12 @@ Example response:
 
 Note the dual fields: `category`/`categories` and `location`/`locations`. The singular fields contain only the first value for backward compatibility. Prefer the array fields.
 
-### `simple_inventory.get_items_from_all_inventories`
+### `simple_inventory_enhanced.get_items_from_all_inventories`
 
 Retrieve items from every inventory at once. Supports `response_variable` for use in automations and scripts.
 
 ```yaml
-service: simple_inventory.get_items_from_all_inventories
+service: simple_inventory_enhanced.get_items_from_all_inventories
 response_variable: result
 ```
 
@@ -429,12 +429,12 @@ Example response:
 }
 ```
 
-### `simple_inventory.get_item_consumption_rates`
+### `simple_inventory_enhanced.get_item_consumption_rates`
 
 Get consumption analytics for a specific item. Requires at least 2 decrement events to produce meaningful data. Supports `response_variable` for use in automations and scripts.
 
 ```yaml
-service: simple_inventory.get_item_consumption_rates
+service: simple_inventory_enhanced.get_item_consumption_rates
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
   name: "Frozen Pizza"
@@ -476,12 +476,12 @@ Example response:
 | `daily_spend_rate` | Average daily purchasing cost (null if no priced restock events) |
 | `weekly_spend_rate` | Average weekly purchasing cost (null if no priced restock events) |
 
-### `simple_inventory.lookup_by_barcode`
+### `simple_inventory_enhanced.lookup_by_barcode`
 
 Search for an item by barcode across all inventories. Useful for finding which inventory contains a scanned item. Supports `response_variable` for use in automations and scripts.
 
 ```yaml
-service: simple_inventory.lookup_by_barcode
+service: simple_inventory_enhanced.lookup_by_barcode
 data:
   barcode: "012345678901"
 response_variable: result
@@ -504,12 +504,12 @@ Example response:
 
 Returns an empty list if no match is found. If the same barcode exists in multiple inventories, all matches are returned.
 
-### `simple_inventory.scan_barcode`
+### `simple_inventory_enhanced.scan_barcode`
 
 Scan a barcode and perform an action on the matched item. Automatically resolves which inventory contains the barcode. Supports `response_variable` for use in automations and scripts.
 
 ```yaml
-service: simple_inventory.scan_barcode
+service: simple_inventory_enhanced.scan_barcode
 data:
   barcode: "012345678901"
   action: "increment"
@@ -790,8 +790,8 @@ today; contributions welcome), to review the content first, or because you
 skipped the checkbox — copy the same file manually:
 
 ```bash
-cp custom_components/simple_inventory/data/custom_sentences/en/simple_inventory.yaml \
-   <config>/custom_sentences/en/simple_inventory.yaml
+cp custom_components/simple_inventory/data/custom_sentences/en/simple_inventory_enhanced.yaml \
+   <config>/custom_sentences/en/simple_inventory_enhanced.yaml
 ```
 
 Then reload custom sentences: **Developer Tools → Actions**, call the
@@ -842,7 +842,7 @@ automation:
       - platform: event
         event_type: tag_scanned
     action:
-      - service: simple_inventory.scan_barcode
+      - service: simple_inventory_enhanced.scan_barcode
         data:
           barcode: "{{ trigger.event.data.tag_id }}"
           action: "increment"
@@ -862,7 +862,7 @@ automation:
         entity_id: input_select.scan_mode
         state: "checkout"
     action:
-      - service: simple_inventory.scan_barcode
+      - service: simple_inventory_enhanced.scan_barcode
         data:
           barcode: "{{ trigger.event.data.tag_id }}"
           action: "decrement"
@@ -880,7 +880,7 @@ automation:
 script:
   find_item_by_barcode:
     sequence:
-      - service: simple_inventory.lookup_by_barcode
+      - service: simple_inventory_enhanced.lookup_by_barcode
         data:
           barcode: "012345678901"
         response_variable: result
@@ -908,7 +908,7 @@ automation:
       - platform: event
         event_type: tag_scanned
     action:
-      - service: simple_inventory.scan_barcode
+      - service: simple_inventory_enhanced.scan_barcode
         data:
           barcode: "{{ trigger.event.data.tag_id }}"
           action: "{{ states('input_select.scan_mode') }}"
@@ -976,13 +976,13 @@ Compare recent consumption against the long-term baseline and notify when an ite
 script:
   check_consumption_spike:
     sequence:
-      - service: simple_inventory.get_item_consumption_rates
+      - service: simple_inventory_enhanced.get_item_consumption_rates
         data:
           inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
           name: "Milk"
           window_days: 30
         response_variable: recent
-      - service: simple_inventory.get_item_consumption_rates
+      - service: simple_inventory_enhanced.get_item_consumption_rates
         data:
           inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
           name: "Milk"
@@ -1008,7 +1008,7 @@ automation:
       - platform: time_pattern
         hours: "/6"
     action:
-      - service: simple_inventory.get_item_consumption_rates
+      - service: simple_inventory_enhanced.get_item_consumption_rates
         data:
           inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
           name: "Coffee"
@@ -1031,7 +1031,7 @@ automation:
 script:
   get_inventory_report:
     sequence:
-      - service: simple_inventory.get_items
+      - service: simple_inventory_enhanced.get_items
         data:
           inventory_name: "Kitchen Fridge"
         response_variable: result
@@ -1047,7 +1047,7 @@ script:
 script:
   low_stock_summary:
     sequence:
-      - service: simple_inventory.get_items_from_all_inventories
+      - service: simple_inventory_enhanced.get_items_from_all_inventories
         response_variable: all_data
       - service: notify.mobile_app
         data:

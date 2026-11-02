@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import EventBus, HomeAssistant
 
-from custom_components.simple_inventory.sensors import ItemsExpiringSoonSensor
+from custom_components.simple_inventory_enhanced.sensors import ItemsExpiringSoonSensor
 
 
 @pytest.fixture

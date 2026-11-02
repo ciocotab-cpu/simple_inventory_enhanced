@@ -10,9 +10,9 @@ import pytest
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.simple_inventory.const import DOMAIN
-from custom_components.simple_inventory.services.base_service import BaseServiceHandler
-from custom_components.simple_inventory.services.quantity_service import QuantityService
+from custom_components.simple_inventory_enhanced.const import DOMAIN
+from custom_components.simple_inventory_enhanced.services.base_service import BaseServiceHandler
+from custom_components.simple_inventory_enhanced.services.quantity_service import QuantityService
 
 
 @pytest.fixture

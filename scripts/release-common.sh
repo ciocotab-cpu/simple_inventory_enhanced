@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Shared release-script logic for Home Assistant integration
 # and its companion frontend card. This file is kept IDENTICAL between:
-#   - simple_inventory/scripts/release-common.sh
+#   - simple_inventory_enhanced/scripts/release-common.sh
 #   - simple-inventory-card/scripts/release-common.sh
 # If you edit it, copy the change to the sibling repo too.
 #
