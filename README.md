@@ -1,6 +1,6 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
-# Simple Inventory Enhanced
+# Simple Inventory
 
 A Home Assistant custom integration for managing household inventories. Track items across multiple inventories with expiration dates, automatic todo list integration, barcode support, item aliases, locations, categories, and change history.
 
@@ -24,8 +24,8 @@ A Home Assistant custom integration for managing household inventories. Track it
 or:
 
 1. Add this repository to HACS
-2. Install "Simple Inventory Enhanced"
-3. Install the companion card: [Simple Inventory Enhanced Card](https://github.com/ciocotab-cpu/simple-inventory-enhanced-card)
+2. Install "Simple Inventory"
+3. Install the companion card: [Simple Inventory Card](https://github.com/ciocotab-cpu/simple-inventory-card-enhanced)
 4. Restart Home Assistant
 
 ### Manual Installation
@@ -33,14 +33,24 @@ or:
 1. Copy `custom_components/simple_inventory_enhanced/` to your Home Assistant `custom_components/` directory
 2. Restart Home Assistant
 
+### Local Build and Stage
+
+From the repository root, run:
+
+```sh
+py scripts/build.py
+```
+
+This creates `simple_inventory_enhanced.zip` and extracts its contents directly to `../config/www/community/simple-inventory-enhanced/`.
+
 ## Frontend Card
 
 This integration works best with the companion Lovelace card:
-**[Simple Inventory Enhanced Card](https://github.com/ciocotab-cpu/simple-inventory-enhanced-card)**
+**[Simple Inventory Card](https://github.com/ciocotab-cpu/simple-inventory-card-enhanced)**
 
 ## Configuration
 
-Add via Home Assistant UI: **Settings -> Devices & Services -> Add Integration -> Simple Inventory**
+Add via Home Assistant UI: **Settings -> Devices & Services -> Add Integration -> Simple Inventory Enhanced**
 
 When you create your first inventory, a global device is also created automatically. Each inventory becomes a device with three sensors.
 
@@ -99,6 +109,10 @@ Automatically add items to a Home Assistant todo list when stock drops below a t
 - When `desired_quantity = 0` (threshold mode): the todo shows `threshold - quantity + 1`, updates live on each change, and the item is removed when `quantity > threshold`
 
 **Note:** The built-in `todo.shopping_list` does not support item descriptions, so description-based features only work with other todo list integrations.
+
+### Description with Inventory ID
+
+Enable `auto_add_id_to_description_enabled` to append the inventory ID to item descriptions. This is useful when scanning barcodes from todo lists — the ID lets automations route the item back to the correct inventory. See [this issue](https://github.com/blaineventurine/simple_inventory_enhanced/issues/19) for the use case.
 
 ### Barcodes
 
@@ -168,13 +182,13 @@ The integration fires Home Assistant events on key inventory transitions, enabli
 
 | Event | When it fires |
 |---|---|
-| `simple_inventory_item_added` | A new item is added to an inventory |
-| `simple_inventory_item_removed` | An item is deleted from an inventory |
-| `simple_inventory_item_quantity_changed` | Any increment or decrement |
-| `simple_inventory_item_depleted` | Quantity drops to 0 (was > 0) |
-| `simple_inventory_item_restocked` | Quantity rises above 0 (was 0) |
-| `simple_inventory_item_added_to_list` | Item is added to a todo list, or its quantity-needed display is updated while already on the list |
-| `simple_inventory_item_removed_from_list` | Item is removed from a todo list |
+| `simple_inventory_enhanced_item_added` | A new item is added to an inventory |
+| `simple_inventory_enhanced_item_removed` | An item is deleted from an inventory |
+| `simple_inventory_enhanced_item_quantity_changed` | Any increment or decrement |
+| `simple_inventory_enhanced_item_depleted` | Quantity drops to 0 (was > 0) |
+| `simple_inventory_enhanced_item_restocked` | Quantity rises above 0 (was 0) |
+| `simple_inventory_enhanced_item_added_to_list` | Item is added to a todo list, or its quantity-needed display is updated while already on the list |
+| `simple_inventory_enhanced_item_removed_from_list` | Item is removed from a todo list |
 
 **Event payloads:**
 
@@ -243,7 +257,7 @@ Each inventory creates three sensors:
 
 ## Service Calls
 
-All services are under the `simple_inventory` domain. You can find your inventory ID by going to **Developer Tools -> States** and filtering for "inventory" — the ID is shown in the sensor attributes.
+All services are under the `simple_inventory_enhanced` domain. You can find your inventory ID by going to **Developer Tools -> States** and filtering for "inventory" — the ID is shown in the sensor attributes.
 
 ### `simple_inventory_enhanced.add_item`
 
@@ -804,7 +818,7 @@ automation:
   - alias: "Shopping list notification"
     trigger:
       - platform: event
-        event_type: simple_inventory_item_added_to_list
+        event_type: simple_inventory_enhanced_item_added_to_list
     action:
       - service: notify.mobile_app
         data:
@@ -819,7 +833,7 @@ automation:
   - alias: "Out of stock alert"
     trigger:
       - platform: event
-        event_type: simple_inventory_item_depleted
+        event_type: simple_inventory_enhanced_item_depleted
     action:
       - service: notify.mobile_app
         data:
