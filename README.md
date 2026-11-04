@@ -1,6 +1,6 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
-# Simple Inventory
+# Simple Inventory Enhanced
 
 A Home Assistant custom integration for managing household inventories. Track items across multiple inventories with expiration dates, automatic todo list integration, barcode support, item aliases, locations, categories, and change history.
 
@@ -24,7 +24,7 @@ A Home Assistant custom integration for managing household inventories. Track it
 or:
 
 1. Add this repository to HACS
-2. Install "Simple Inventory"
+2. Install "Simple Inventory Enhanced"
 3. Install the companion card: [Simple Inventory Card](https://github.com/ciocotab-cpu/simple-inventory-card-enhanced)
 4. Restart Home Assistant
 
@@ -109,10 +109,6 @@ Automatically add items to a Home Assistant todo list when stock drops below a t
 - When `desired_quantity = 0` (threshold mode): the todo shows `threshold - quantity + 1`, updates live on each change, and the item is removed when `quantity > threshold`
 
 **Note:** The built-in `todo.shopping_list` does not support item descriptions, so description-based features only work with other todo list integrations.
-
-### Description with Inventory ID
-
-Enable `auto_add_id_to_description_enabled` to append the inventory ID to item descriptions. This is useful when scanning barcodes from todo lists — the ID lets automations route the item back to the correct inventory. See [this issue](https://github.com/blaineventurine/simple_inventory_enhanced/issues/19) for the use case.
 
 ### Barcodes
 
@@ -758,7 +754,7 @@ Returns: `{ "added": 1, "updated": 0, "skipped": 0, "errors": [] }`
 
 ## Voice & AI Assistants
 
-Simple Inventory registers three native Home Assistant intents so you can
+Simple Inventory Enhanced registers three native Home Assistant intents so you can
 control your inventories by voice or through an LLM-backed conversation
 agent, without writing any automations:
 
@@ -777,7 +773,7 @@ giving voice commands a shorter or more natural name than what's stored.
 ### LLM-backed Assist (OpenAI, Google Generative AI, a local model via Ollama, etc.)
 
 No setup needed beyond configuring the LLM conversation agent itself in
-"Assist" control mode. Simple Inventory ships an `llm.py` platform module
+"Assist" control mode. Simple Inventory Enhanced ships an `llm.py` platform module
 that contributes its remove/add/query intents as callable tools to Home
 Assistant's Assist API, so any LLM conversation agent using it gets them
 automatically -- no entity exposure required, since these tools resolve
@@ -788,8 +784,8 @@ entities.
 
 If your Home Assistant language is English, check
 **"Install example voice commands"** when adding your first inventory
-(Settings → Devices & Services → Add Integration → Simple Inventory), or
-later via the global Simple Inventory device's **Configure** button. This
+(Settings → Devices & Services → Add Integration → Simple Inventory Enhanced), or
+later via the global Simple Inventory Enhanced device's **Configure** button. This
 copies a bundled example sentence file into your config directory and
 reloads custom sentences automatically — no restart needed. It never
 overwrites a file that's already there, so it's safe to check even if
