@@ -48,9 +48,10 @@ class UpdateItemServiceData(TypedDict):
     expiry_date: NotRequired[str]
     inventory_id: NotRequired[str]
     inventory_name: NotRequired[str]
+    item_id: NotRequired[str]
     location: NotRequired[str]
     name: str
-    old_name: str
+    old_name: NotRequired[str]
     price: NotRequired[float]
     quantity: NotRequired[float]
     todo_list: NotRequired[str]
@@ -63,7 +64,9 @@ class RemoveItemServiceData(TypedDict):
 
     inventory_id: NotRequired[str]
     inventory_name: NotRequired[str]
-    name: str
+    item_id: NotRequired[str]
+    name: NotRequired[str]
+    barcode: NotRequired[str]
 
 
 class GetItemsServiceData(TypedDict, total=False):
@@ -85,6 +88,7 @@ class GetAllItemsServiceData(TypedDict, total=False):
 class InventoryItem(TypedDict, total=False):
     """Type definition for inventory item data."""
 
+    id: str
     auto_add_enabled: bool
     auto_add_id_to_description_enabled: bool
     auto_add_to_list_quantity: float

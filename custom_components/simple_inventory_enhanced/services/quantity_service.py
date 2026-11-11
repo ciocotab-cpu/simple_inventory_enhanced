@@ -14,7 +14,12 @@ from ..todo_manager import TodoManager
 from ..types import InventoryItem
 from .base_service import BaseServiceHandler
 from .domain_data import get_coordinators
-from .resolvers import inventory_display_name, resolve_inventory_id, resolve_item_name
+from .resolvers import (
+    inventory_display_name,
+    resolve_inventory_id,
+    resolve_item_id,
+    resolve_item_name,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,16 +45,25 @@ class QuantityService(BaseServiceHandler):
         call: ServiceCall,
         operation: Literal["increment", "decrement"],
         coordinator_method: Callable[
-            [SimpleInventoryCoordinator, str, str | None, float, str | None, float | None],
+            [
+                SimpleInventoryCoordinator,
+                str,
+                str | None,
+                float,
+                str | None,
+                float | None,
+                str | None,
+            ],
             Awaitable[bool],
         ],
         todo_method: Callable[[str, InventoryItem], Awaitable[bool]],
     ) -> None:
         inventory_id_raw, inventory_name, name, barcode = self._get_inventory_name_barcode(call)
+        item_id = call.data.get("item_id")
         inventory_id = await resolve_inventory_id(self.hass, inventory_id_raw, inventory_name)
         amount = float(call.data.get("amount", 1))
         price: float | None = call.data.get("price")
-        display_name = name or barcode or "unknown"
+        display_name = name or barcode or item_id or "unknown"
 
         coordinator = self._require_coordinator(inventory_id)
         if coordinator is None:
@@ -57,13 +71,28 @@ class QuantityService(BaseServiceHandler):
                 f"Inventory '{inventory_display_name(self.hass, inventory_id)}' is not currently loaded"
             )
 
-        if name:
-            name = await resolve_item_name(coordinator, inventory_id, name)
+        if item_id:
+            item_data = await coordinator.async_get_item_by_id(inventory_id, item_id)
+            if item_data is None:
+                raise ServiceValidationError(f"No item with ID '{item_id}' found")
+            name = str(item_data.get("name", item_id))
+            display_name = name
+        elif name:
+            item_id = await resolve_item_id(coordinator, inventory_id, name)
+            if item_id:
+                item_data = await coordinator.async_get_item_by_id(inventory_id, item_id)
+            else:
+                name = await resolve_item_name(coordinator, inventory_id, name)
+                item_data = await coordinator.async_get_item(inventory_id, name)
+            name = str(item_data.get("name", name)) if item_data else name
             display_name = name
 
         try:
-            if await coordinator_method(coordinator, inventory_id, name, amount, barcode, price):
+            if await coordinator_method(
+                coordinator, inventory_id, name, amount, barcode, price, item_id
+            ):
                 resolved_name = name
+                resolved_item_id = item_id
                 if not resolved_name and barcode:
                     matches = await coordinator.async_lookup_by_barcode(barcode)
                     match = next(
@@ -71,9 +100,15 @@ class QuantityService(BaseServiceHandler):
                     )
                     if match:
                         resolved_name = match.get("name")
+                        resolved_item_id = str(match.get("id", "")) or None
 
                 if resolved_name:
-                    item_data = await coordinator.async_get_item(inventory_id, resolved_name)
+                    if resolved_item_id:
+                        item_data = await coordinator.async_get_item_by_id(
+                            inventory_id, resolved_item_id
+                        )
+                    else:
+                        item_data = await coordinator.async_get_item(inventory_id, resolved_name)
                     if item_data:
                         await todo_method(resolved_name, cast(InventoryItem, item_data))
 
@@ -109,8 +144,15 @@ class QuantityService(BaseServiceHandler):
         await self._handle_quantity_change(
             call,
             "increment",
-            lambda coordinator, inv_id, item_name, amt, bc, p: (
-                coordinator.async_increment_item(inv_id, item_name, amt, barcode=bc, price=p)
+            lambda coordinator, inv_id, item_name, amt, bc, p, item_id: (
+                coordinator.async_increment_item(
+                    inv_id,
+                    item_name,
+                    amt,
+                    barcode=bc,
+                    price=p,
+                    **({"item_id": item_id} if item_id else {}),
+                )
             ),
             self.todo_manager.check_and_remove_item,
         )
@@ -119,8 +161,15 @@ class QuantityService(BaseServiceHandler):
         await self._handle_quantity_change(
             call,
             "decrement",
-            lambda coordinator, inv_id, item_name, amt, bc, p: (
-                coordinator.async_decrement_item(inv_id, item_name, amt, barcode=bc, price=p)
+            lambda coordinator, inv_id, item_name, amt, bc, p, item_id: (
+                coordinator.async_decrement_item(
+                    inv_id,
+                    item_name,
+                    amt,
+                    barcode=bc,
+                    price=p,
+                    **({"item_id": item_id} if item_id else {}),
+                )
             ),
             self.todo_manager.check_and_add_item,
         )
@@ -158,7 +207,12 @@ class QuantityService(BaseServiceHandler):
         if result.get("success") and action in ("increment", "decrement"):
             item_name: str = result["item_name"]
             resolved_id: str = result["inventory_id"]
-            item_data = await coordinator.async_get_item(resolved_id, item_name)
+            item_id = result.get("item_id")
+            item_data = (
+                await coordinator.async_get_item_by_id(resolved_id, item_id)
+                if item_id
+                else await coordinator.async_get_item(resolved_id, item_name)
+            )
             if item_data:
                 if action == "decrement":
                     await self.todo_manager.check_and_add_item(

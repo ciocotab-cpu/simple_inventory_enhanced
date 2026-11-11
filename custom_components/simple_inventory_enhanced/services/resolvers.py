@@ -88,14 +88,40 @@ async def resolve_item_name(
     """Return the canonical stored item name for an existing item."""
     if not name:
         raise ServiceValidationError("An item name is required")
+    items = await coordinator.async_list_items(inventory_id)
+    options: list[tuple[str, str]] = []
+    id_to_name: dict[str, str] = {}
+    for index, item in enumerate(items):
+        item_name = str(item.get("name", ""))
+        item_id = str(item.get("id", f"legacy:{index}:{item_name}"))
+        if not item_name:
+            continue
+        id_to_name[item_id] = item_name
+        options.append((item_name, item_id))
+        for alias in item.get("aliases", []):
+            options.append((str(alias), item_id))
+    resolved_id = _resolve_one(name, options, "item", "items")
+    return id_to_name[resolved_id]
+
+
+async def resolve_item_id(
+    coordinator: "SimpleInventoryCoordinator", inventory_id: str, name: str
+) -> str | None:
+    """Resolve an item name or alias to an unambiguous stable item ID."""
+    if not name:
+        raise ServiceValidationError("An item name is required")
 
     items = await coordinator.async_list_items(inventory_id)
     options: list[tuple[str, str]] = []
+    resolved_ids: dict[str, str | None] = {}
     for item in items:
         item_name = str(item.get("name", ""))
         if not item_name:
             continue
-        options.append((item_name, item_name))
+        item_id = str(item.get("id", ""))
+        match_key = item_id or f"legacy:{len(resolved_ids)}:{item_name}"
+        resolved_ids[match_key] = item_id or None
+        options.append((item_name, match_key))
         for alias in item.get("aliases", []):
-            options.append((str(alias), item_name))
-    return _resolve_one(name, options, "item", "items")
+            options.append((str(alias), match_key))
+    return resolved_ids[_resolve_one(name, options, "item", "items")]

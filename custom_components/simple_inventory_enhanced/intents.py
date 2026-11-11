@@ -32,7 +32,7 @@ from .const import (
     SERVICE_UPDATE_ITEM,
 )
 from .services.domain_data import get_coordinators
-from .services.resolvers import resolve_inventory_id, resolve_item_name
+from .services.resolvers import resolve_inventory_id, resolve_item_id, resolve_item_name
 
 INTENT_REMOVE_ITEM = "SimpleInventoryRemoveItem"
 INTENT_ADD_ITEM = "SimpleInventoryAddItem"
@@ -465,18 +465,22 @@ class SetItemQuantityIntent(intent.IntentHandler):
             coordinator = get_coordinators(hass).get(inventory_id)
             if coordinator is None:
                 raise ServiceValidationError(f"Inventory '{inventory}' is not currently loaded")
-            resolved_item = await resolve_item_name(coordinator, inventory_id, item)
+            resolved_item_id = await resolve_item_id(coordinator, inventory_id, item)
+            resolved_item_name = await resolve_item_name(coordinator, inventory_id, item)
         except ServiceValidationError as err:
             raise intent.IntentHandleError(str(err)) from err
 
+        item_data = (
+            {"item_id": resolved_item_id} if resolved_item_id else {"old_name": resolved_item_name}
+        )
         try:
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_UPDATE_ITEM,
                 {
                     "inventory_id": inventory_id,
-                    "old_name": resolved_item,
-                    "name": resolved_item,
+                    **item_data,
+                    "name": resolved_item_name,
                     "quantity": quantity,
                 },
                 blocking=True,

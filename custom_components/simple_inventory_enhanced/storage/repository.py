@@ -42,7 +42,7 @@ from ..const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 LEGACY_MIGRATION_FLAG = "legacy_migrated"
 
 
@@ -250,8 +250,7 @@ class InventoryRepository:
                     price REAL NOT NULL DEFAULT 0,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (inventory_id) REFERENCES inventories(id) ON DELETE CASCADE,
-                    UNIQUE (inventory_id, name)
+                    FOREIGN KEY (inventory_id) REFERENCES inventories(id) ON DELETE CASCADE
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_items_inventory_id
@@ -341,6 +340,8 @@ class InventoryRepository:
             )
             await self._migrate_to_v2()
             await self._migrate_to_v3()
+            await self._conn.commit()
+            await self._migrate_to_v4()
             return
 
         current_version = int(row[0])
@@ -349,6 +350,9 @@ class InventoryRepository:
                 await self._migrate_to_v2()
             if current_version < 3:
                 await self._migrate_to_v3()
+            if current_version < 4:
+                await self._conn.commit()
+                await self._migrate_to_v4()
             await self._conn.execute(
                 "UPDATE metadata SET value = ? WHERE key = 'schema_version'",
                 (str(SCHEMA_VERSION),),
@@ -400,6 +404,61 @@ class InventoryRepository:
             await self._conn.execute(
                 "ALTER TABLE consumption_history ADD COLUMN price REAL NOT NULL DEFAULT 0"
             )
+
+    async def _migrate_to_v4(self) -> None:
+        """Make item IDs the sole identity key; names may repeat within an inventory."""
+        assert self._conn is not None
+        await self._conn.execute("PRAGMA foreign_keys = OFF")
+        try:
+            await self._conn.execute("BEGIN")
+            await self._conn.execute("""
+                CREATE TABLE items_v4 (
+                    id TEXT PRIMARY KEY,
+                    inventory_id TEXT NOT NULL,
+                    name TEXT NOT NULL COLLATE NOCASE,
+                    description TEXT DEFAULT '',
+                    quantity REAL NOT NULL DEFAULT 0,
+                    unit TEXT DEFAULT '',
+                    expiry_date TEXT DEFAULT '',
+                    expiry_alert_days INTEGER DEFAULT 0,
+                    auto_add_enabled INTEGER NOT NULL DEFAULT 0,
+                    auto_add_id_to_description_enabled INTEGER NOT NULL DEFAULT 0,
+                    auto_add_to_list_quantity REAL NOT NULL DEFAULT 0,
+                    desired_quantity REAL NOT NULL DEFAULT 0,
+                    todo_list TEXT DEFAULT '',
+                    todo_quantity_placement TEXT NOT NULL DEFAULT 'name',
+                    price REAL NOT NULL DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (inventory_id) REFERENCES inventories(id) ON DELETE CASCADE
+                )
+                """)
+            await self._conn.execute("""
+                INSERT INTO items_v4 (
+                    id, inventory_id, name, description, quantity, unit,
+                    expiry_date, expiry_alert_days, auto_add_enabled,
+                    auto_add_id_to_description_enabled, auto_add_to_list_quantity,
+                    desired_quantity, todo_list, todo_quantity_placement, price,
+                    created_at, updated_at
+                )
+                SELECT id, inventory_id, name, description, quantity, unit,
+                       expiry_date, expiry_alert_days, auto_add_enabled,
+                       auto_add_id_to_description_enabled, auto_add_to_list_quantity,
+                       desired_quantity, todo_list, todo_quantity_placement, price,
+                       created_at, updated_at
+                FROM items
+                """)
+            await self._conn.execute("DROP TABLE items")
+            await self._conn.execute("ALTER TABLE items_v4 RENAME TO items")
+            await self._conn.execute("""
+                CREATE INDEX idx_items_inventory_id ON items (inventory_id)
+                """)
+            await self._conn.commit()
+        except Exception:
+            await self._conn.rollback()
+            raise
+        finally:
+            await self._conn.execute("PRAGMA foreign_keys = ON")
 
     def _connection(self) -> aiosqlite.Connection:
         """Accessor for the open connection."""
@@ -496,7 +555,7 @@ class InventoryRepository:
         ]
 
     async def create_item(self, inventory_id: str, data: dict[str, Any]) -> str:
-        """Insert or merge an item; returns item_id."""
+        """Insert or update an item by ID; returns item_id."""
         item_id = data.get("id") or str(uuid.uuid4())
         payload = {
             FIELD_NAME: data[FIELD_NAME],
@@ -546,7 +605,8 @@ class InventoryRepository:
                     todo_quantity_placement, price
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(inventory_id, name) DO UPDATE SET
+                ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name,
                     quantity = items.quantity + excluded.quantity,
                     description = CASE
                         WHEN excluded.description != '' THEN excluded.description
@@ -575,6 +635,7 @@ class InventoryRepository:
                         ELSE items.price
                     END,
                     updated_at = CURRENT_TIMESTAMP
+                WHERE items.inventory_id = excluded.inventory_id
                 RETURNING id
                 """,
                 params,
@@ -583,7 +644,9 @@ class InventoryRepository:
             await cursor.close()
             await conn.commit()
 
-        return cast(str, row[0]) if row else item_id
+        if row is None:
+            raise ValueError(f"Item ID '{item_id}' belongs to another inventory")
+        return cast(str, row[0])
 
     async def update_item(self, item_id: str, data: dict[str, Any]) -> bool:
         """Update an item record; returns True if a row was updated."""
@@ -797,7 +860,7 @@ class InventoryRepository:
         return list(items.values())
 
     async def get_item_by_name(self, inventory_id: str, name: str) -> dict[str, Any] | None:
-        """Retrieve item by inventory and case-insensitive name."""
+        """Retrieve an item by name only when that name is unambiguous."""
         conn = self._connection()
         cursor = await conn.execute(
             """
@@ -812,9 +875,50 @@ class InventoryRepository:
             """,
             (inventory_id, name),
         )
+        rows = list(await cursor.fetchmany(2))
+        await cursor.close()
+        if len(rows) != 1:
+            return None
+
+        row = rows[0]
+        return {
+            "id": row[0],
+            "inventory_id": row[1],
+            FIELD_NAME: row[2],
+            FIELD_DESCRIPTION: row[3],
+            FIELD_QUANTITY: row[4],
+            FIELD_UNIT: row[5],
+            FIELD_EXPIRY_DATE: row[6],
+            FIELD_EXPIRY_ALERT_DAYS: row[7],
+            FIELD_AUTO_ADD_ENABLED: bool(row[8]),
+            FIELD_AUTO_ADD_ID_TO_DESCRIPTION_ENABLED: bool(row[9]),
+            FIELD_AUTO_ADD_TO_LIST_QUANTITY: row[10],
+            FIELD_DESIRED_QUANTITY: row[11],
+            FIELD_TODO_LIST: row[12],
+            FIELD_TODO_QUANTITY_PLACEMENT: row[13],
+            FIELD_PRICE: row[14],
+            "created_at": row[15],
+            "updated_at": row[16],
+        }
+
+    async def get_item_by_id(self, inventory_id: str, item_id: str) -> dict[str, Any] | None:
+        """Retrieve an item by its stable ID and owning inventory."""
+        conn = self._connection()
+        cursor = await conn.execute(
+            """
+            SELECT id, inventory_id, name, description, quantity, unit,
+                   expiry_date, expiry_alert_days, auto_add_enabled,
+                   auto_add_id_to_description_enabled, auto_add_to_list_quantity,
+                   desired_quantity, todo_list, todo_quantity_placement,
+                   price, created_at, updated_at
+            FROM items
+            WHERE inventory_id = ? AND id = ?
+            """,
+            (inventory_id, item_id),
+        )
         row = await cursor.fetchone()
         await cursor.close()
-        if not row:
+        if row is None:
             return None
 
         return {

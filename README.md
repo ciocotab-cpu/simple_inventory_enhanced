@@ -112,7 +112,7 @@ Automatically add items to a Home Assistant todo list when stock drops below a t
 
 ### Barcodes
 
-Items can have multiple barcodes associated with them (comma-separated in the API). Most service calls accept either `name` or `barcode` to identify an item. Two dedicated barcode services make scanning workflows easy:
+Items have stable IDs, and item names may repeat within an inventory. Prefer `item_id` when updating, removing, incrementing, or decrementing an item. Name/alias and barcode selectors remain supported when they resolve to exactly one item.
 
 - **`lookup_by_barcode`** — Search for an item by barcode across all inventories
 - **`scan_barcode`** — Scan a barcode and perform an action (increment, decrement, or lookup) with automatic cross-inventory resolution
@@ -285,7 +285,7 @@ Only `inventory_id` and `name` are required. All other fields are optional.
 
 ### `simple_inventory_enhanced.remove_item`
 
-Remove an item. Specify either `name` or `barcode`.
+Remove an item. Specify `item_id`, or an unambiguous `name`/`barcode`.
 
 ```yaml
 service: simple_inventory_enhanced.remove_item
@@ -302,7 +302,7 @@ Increase an item's quantity. Supports decimal amounts. Optionally pass `price` t
 service: simple_inventory_enhanced.increment_item
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
-  name: "Frozen Pizza"
+  item_id: "c1b6c66e-7334-4e31-bd8a-fc0d10a8f326"
   amount: 3
   price: 9.49
 ```
@@ -331,13 +331,13 @@ data:
 
 ### `simple_inventory_enhanced.update_item`
 
-Update any fields on an existing item. Use `old_name` to identify the item (also matches aliases) and `name` for the (possibly new) name. Pass `aliases` to replace all of the item's aliases (empty string clears them).
+Update any fields on an existing item. Use `item_id` to identify the item and `name` for the (possibly new) name. For backward compatibility, `old_name` (including aliases) is accepted only when it resolves to exactly one item. Pass `aliases` to replace all of the item's aliases (empty string clears them).
 
 ```yaml
 service: simple_inventory_enhanced.update_item
 data:
   inventory_id: "01JYFPCDMBRBRK4MB3C26S2FKH"
-  old_name: "Frozen Pizza"
+  item_id: "c1b6c66e-7334-4e31-bd8a-fc0d10a8f326"
   name: "Frozen Pizza"
   aliases: "pizza night, pepperoni pizza"
   category: "Frozen Foods, Quick Meals"

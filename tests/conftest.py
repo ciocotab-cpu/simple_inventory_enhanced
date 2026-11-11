@@ -77,6 +77,7 @@ def mock_coordinator() -> MagicMock:
     coordinator.async_get_item = AsyncMock(
         return_value={"quantity": 5, "auto_add_to_list_quantity": 2}
     )
+    coordinator.async_get_item_by_id = AsyncMock(return_value=None)
     coordinator.async_list_items = AsyncMock(return_value=[{"name": "milk", "quantity": 5}])
 
     coordinator.async_increment_item = AsyncMock(return_value=True)

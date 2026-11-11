@@ -216,9 +216,10 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
     async def async_update_item(
         self,
         inventory_id: str,
-        old_name: str,
+        old_name: str | None,
         new_name: str,
         *,
+        item_id: str | None = None,
         barcode: str | None = None,
         aliases: str | None = None,
         **kwargs: Any,
@@ -226,8 +227,12 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
         """Update an existing item."""
         await self.async_initialize()
 
-        resolved_old_name = await self._resolve_item_name(inventory_id, old_name, barcode)
-        item = await self.repository.get_item_by_name(inventory_id, resolved_old_name)
+        if item_id:
+            item = await self.repository.get_item_by_id(inventory_id, item_id)
+            resolved_old_name = str(item.get(FIELD_NAME, item_id)) if item else item_id
+        else:
+            resolved_old_name = await self._resolve_item_name(inventory_id, old_name, barcode)
+            item = await self.repository.get_item_by_name(inventory_id, resolved_old_name)
         if not item:
             _LOGGER.warning(
                 "Cannot update non-existent item '%s' in inventory '%s'",
@@ -282,14 +287,26 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
         return True
 
     async def async_remove_item(
-        self, inventory_id: str, name: str | None = None, *, barcode: str | None = None
+        self,
+        inventory_id: str,
+        name: str | None = None,
+        *,
+        item_id: str | None = None,
+        barcode: str | None = None,
     ) -> bool:
         """Remove an item."""
         await self.async_initialize()
 
-        resolved_name = await self._resolve_item_name(inventory_id, name, barcode)
-        cleaned_name = self._validate_and_clean_name(resolved_name, "remove", inventory_id)
-        item = await self.repository.get_item_by_name(inventory_id, cleaned_name)
+        if item_id:
+            item = await self.repository.get_item_by_id(inventory_id, item_id)
+            cleaned_name = str(item.get(FIELD_NAME, item_id)) if item else item_id
+        elif barcode:
+            item = await self.repository.get_item_by_barcode(inventory_id, barcode.strip())
+            cleaned_name = str(item.get(FIELD_NAME, barcode)) if item else barcode
+        else:
+            resolved_name = await self._resolve_item_name(inventory_id, name, None)
+            cleaned_name = self._validate_and_clean_name(resolved_name, "remove", inventory_id)
+            item = await self.repository.get_item_by_name(inventory_id, cleaned_name)
         if not item:
             _LOGGER.warning(
                 "Cannot remove non-existent item '%s' from inventory '%s'",
@@ -316,6 +333,7 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
         name: str | None = None,
         amount: float = 1,
         *,
+        item_id: str | None = None,
         barcode: str | None = None,
         price: float | None = None,
     ) -> bool:
@@ -328,6 +346,17 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
             )
             return False
 
+        if item_id:
+            return await self._adjust_quantity(
+                inventory_id, None, amount, price=price, item_id=item_id
+            )
+        if barcode:
+            item = await self.repository.get_item_by_barcode(inventory_id, barcode.strip())
+            if item is None:
+                return False
+            return await self._adjust_quantity(
+                inventory_id, None, amount, price=price, item_id=str(item["id"])
+            )
         resolved_name = await self._resolve_item_name(inventory_id, name, barcode)
         return await self._adjust_quantity(inventory_id, resolved_name, amount, price=price)
 
@@ -337,6 +366,7 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
         name: str | None = None,
         amount: float = 1,
         *,
+        item_id: str | None = None,
         barcode: str | None = None,
         price: float | None = None,
     ) -> bool:
@@ -349,6 +379,17 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
             )
             return False
 
+        if item_id:
+            return await self._adjust_quantity(
+                inventory_id, None, -amount, price=price, item_id=item_id
+            )
+        if barcode:
+            item = await self.repository.get_item_by_barcode(inventory_id, barcode.strip())
+            if item is None:
+                return False
+            return await self._adjust_quantity(
+                inventory_id, None, -amount, price=price, item_id=str(item["id"])
+            )
         resolved_name = await self._resolve_item_name(inventory_id, name, barcode)
         return await self._adjust_quantity(inventory_id, resolved_name, -amount, price=price)
 
@@ -356,6 +397,11 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
         """Return item data by name."""
         await self.async_initialize()
         return await self.repository.get_item_by_name(inventory_id, name)
+
+    async def async_get_item_by_id(self, inventory_id: str, item_id: str) -> dict[str, Any] | None:
+        """Return item data by its stable ID."""
+        await self.async_initialize()
+        return await self.repository.get_item_by_id(inventory_id, item_id)
 
     async def async_lookup_by_barcode(self, barcode: str) -> list[dict[str, Any]]:
         """Cross-inventory barcode lookup."""
@@ -402,11 +448,16 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
 
         if action == "increment":
             result = await self.async_increment_item(
-                resolved_inventory_id, name=item_name, amount=amount, price=price
+                resolved_inventory_id,
+                name=item_name,
+                amount=amount,
+                item_id=item["id"],
+                price=price,
             )
             return {
                 "action": "increment",
                 "success": result,
+                "item_id": item["id"],
                 "item_name": item_name,
                 "inventory_id": resolved_inventory_id,
                 "amount": amount,
@@ -414,11 +465,16 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
 
         if action == "decrement":
             result = await self.async_decrement_item(
-                resolved_inventory_id, name=item_name, amount=amount, price=price
+                resolved_inventory_id,
+                name=item_name,
+                amount=amount,
+                item_id=item["id"],
+                price=price,
             )
             return {
                 "action": "decrement",
                 "success": result,
+                "item_id": item["id"],
                 "item_name": item_name,
                 "inventory_id": resolved_inventory_id,
                 "amount": amount,
@@ -540,14 +596,21 @@ class SimpleInventoryCoordinator(_StatisticsMixin, _ImportExportMixin, _Analytic
     async def _adjust_quantity(
         self,
         inventory_id: str,
-        name: str,
+        name: str | None,
         delta: float,
         price: float | None = None,
+        item_id: str | None = None,
     ) -> bool:
         await self.async_initialize()
 
-        cleaned_name = self._validate_and_clean_name(name, "update quantity", inventory_id)
-        item = await self.repository.get_item_by_name(inventory_id, cleaned_name)
+        if item_id:
+            item = await self.repository.get_item_by_id(inventory_id, item_id)
+            cleaned_name = str(item.get(FIELD_NAME, item_id)) if item else item_id
+        else:
+            cleaned_name = self._validate_and_clean_name(
+                name or "", "update quantity", inventory_id
+            )
+            item = await self.repository.get_item_by_name(inventory_id, cleaned_name)
         if not item:
             _LOGGER.warning(
                 "Cannot adjust quantity for non-existent item '%s' in inventory '%s'",

@@ -102,26 +102,72 @@ async def test_create_item_and_get_by_name_case_insensitive(repo: InventoryRepos
 
 
 @pytest.mark.asyncio
-async def test_create_item_merges_on_name_conflict(repo: InventoryRepository) -> None:
+async def test_create_item_updates_on_id_conflict(repo: InventoryRepository) -> None:
     await repo.upsert_inventory("inv1", "Kitchen", "", "", "", None)
 
     first_id = await repo.create_item(
         "inv1",
-        {FIELD_NAME: "Milk", FIELD_QUANTITY: 2, FIELD_DESCRIPTION: "", FIELD_UNIT: ""},
+        {"id": "milk-item", FIELD_NAME: "Milk", FIELD_QUANTITY: 2},
     )
     second_id = await repo.create_item(
         "inv1",
-        {FIELD_NAME: "milk", FIELD_QUANTITY: 3, FIELD_DESCRIPTION: "desc", FIELD_UNIT: "L"},
+        {
+            "id": "milk-item",
+            FIELD_NAME: "Milk",
+            FIELD_QUANTITY: 3,
+            FIELD_DESCRIPTION: "desc",
+            FIELD_UNIT: "L",
+        },
     )
 
-    # Should merge into one row; returned id should be the existing row id
-    assert second_id == first_id
+    assert second_id == first_id == "milk-item"
 
-    item = await repo.get_item_by_name("inv1", "MILK")
+    item = await repo.get_item_by_id("inv1", "milk-item")
     assert item is not None
     assert item[FIELD_QUANTITY] == 5
     assert item[FIELD_UNIT] == "L"
     assert item[FIELD_DESCRIPTION] == "desc"
+
+
+@pytest.mark.asyncio
+async def test_create_item_allows_same_name_with_distinct_ids(
+    repo: InventoryRepository,
+) -> None:
+    await repo.upsert_inventory("inv1", "Kitchen", "", "", "", None)
+
+    milk_id = await repo.create_item("inv1", {FIELD_NAME: "Milk", FIELD_QUANTITY: 2})
+    powdered_milk_id = await repo.create_item("inv1", {FIELD_NAME: "milk", FIELD_QUANTITY: 3})
+
+    assert powdered_milk_id != milk_id
+    assert await repo.get_item_by_name("inv1", "milk") is None
+    milk = await repo.get_item_by_id("inv1", milk_id)
+    powdered_milk = await repo.get_item_by_id("inv1", powdered_milk_id)
+    assert milk is not None
+    assert powdered_milk is not None
+    assert milk[FIELD_QUANTITY] == 2
+    assert powdered_milk[FIELD_QUANTITY] == 3
+
+
+@pytest.mark.asyncio
+async def test_schema_v4_preserves_item_relations(hass_with_tmp_config: HomeAssistant) -> None:
+    repository = InventoryRepository(hass_with_tmp_config, db_filename="schema_v4.db")
+    await repository.async_initialize()
+    await repository.upsert_inventory("inv1", "Kitchen", "", "", "", None)
+    item_id = await repository.create_item("inv1", {FIELD_NAME: "Milk"})
+    location_id = await repository.ensure_location("inv1", "Fridge")
+    await repository.set_item_locations(item_id, [location_id])
+
+    conn = repository._connection()
+    cursor = await conn.execute("PRAGMA foreign_key_check")
+    violations = await cursor.fetchall()
+    await cursor.close()
+    assert violations == []
+
+    cursor = await conn.execute("SELECT item_id FROM item_locations")
+    rows = await cursor.fetchall()
+    await cursor.close()
+    assert [row[0] for row in rows] == [item_id]
+    await repository.async_close()
 
 
 @pytest.mark.asyncio
@@ -943,13 +989,13 @@ async def test_schema_migration_v1_to_v2(
     await repo.async_initialize()
 
     try:
-        # Verify schema version is now 3
+        # Verify schema version is now 4
         conn = repo._connection()
         cursor = await conn.execute("SELECT value FROM metadata WHERE key = 'schema_version'")
         row = await cursor.fetchone()
         await cursor.close()
         assert row is not None
-        assert int(row[0]) == 3
+        assert int(row[0]) == 4
 
         # Verify consumption_history table exists
         cursor = await conn.execute(
@@ -969,6 +1015,11 @@ async def test_schema_migration_v1_to_v2(
         history_columns = {r[1] for r in await cursor.fetchall()}
         await cursor.close()
         assert "price" in history_columns
+
+        await repo.upsert_inventory("inv1", "Kitchen", "", "", "", None)
+        first_id = await repo.create_item("inv1", {FIELD_NAME: "Milk"})
+        second_id = await repo.create_item("inv1", {FIELD_NAME: "milk"})
+        assert first_id != second_id
     finally:
         await repo.async_close()
 

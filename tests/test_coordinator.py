@@ -291,6 +291,27 @@ async def test_async_update_item_updates_location_and_category(
 
 
 @pytest.mark.asyncio
+async def test_async_update_item_targets_item_id(
+    coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
+) -> None:
+    mock_repository.get_item_by_id = AsyncMock(
+        return_value={"id": "item-1", "name": "milk", "quantity": 2}
+    )
+    mock_repository.update_item = AsyncMock(return_value=True)
+
+    with patch.object(EventBus, "async_fire"):
+        updated = await coordinator.async_update_item(
+            "kitchen_123", "milk", "whole milk", item_id="item-1", quantity=3
+        )
+
+    assert updated is True
+    mock_repository.get_item_by_id.assert_awaited_once_with("kitchen_123", "item-1")
+    mock_repository.get_item_by_name.assert_not_awaited()
+    mock_repository.update_item.assert_awaited_once()
+    assert mock_repository.update_item.await_args.args[0] == "item-1"
+
+
+@pytest.mark.asyncio
 async def test_async_update_item_comma_separated_locations(
     coordinator: SimpleInventoryCoordinator, mock_repository: MagicMock
 ) -> None:
@@ -1368,6 +1389,7 @@ async def test_csv_round_trip(
 ) -> None:
     items = [
         {
+            "id": "milk-item",
             "name": "Milk",
             "description": "Fresh",
             "quantity": 3,
@@ -1390,6 +1412,7 @@ async def test_csv_round_trip(
     parsed = coordinator._csv_to_items(csv_str)
 
     assert len(parsed) == 1
+    assert parsed[0]["id"] == "milk-item"
     assert parsed[0]["name"] == "Milk"
     assert parsed[0]["quantity"] == 3.0
     assert parsed[0]["unit"] == "gallons"

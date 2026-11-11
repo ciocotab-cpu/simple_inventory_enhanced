@@ -64,6 +64,22 @@ def test_get_items_schema_still_accepts_either() -> None:
         GET_ITEMS_SCHEMA({"inventory_id": "inv_1", "inventory_name": "Kitchen"})
 
 
+def test_item_mutations_accept_stable_item_ids() -> None:
+    assert (
+        UPDATE_ITEM_SCHEMA({"inventory_id": "inv_1", "item_id": "item-1", "name": "Milk"})[
+            "item_id"
+        ]
+        == "item-1"
+    )
+    assert REMOVE_ITEM_SCHEMA({"inventory_id": "inv_1", "item_id": "item-1"})["item_id"] == (
+        "item-1"
+    )
+    assert (
+        QUANTITY_UPDATE_SCHEMA({"inventory_id": "inv_1", "item_id": "item-1"})["item_id"]
+        == "item-1"
+    )
+
+
 def test_untouched_consumption_rates_schema_still_requires_inventory_id() -> None:
     """Out-of-scope schema must be unaffected — inventory_id stays strictly required."""
     with pytest.raises(vol.Invalid):

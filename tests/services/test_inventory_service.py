@@ -190,6 +190,33 @@ class TestInventoryService:
         assert kwargs["aliases"] is None
 
     @pytest.mark.asyncio
+    async def test_async_update_item_targets_item_id(
+        self,
+        inventory_service: InventoryService,
+        mock_coordinator: MagicMock,
+    ) -> None:
+        mock_coordinator.async_get_item_by_id.return_value = {
+            "id": "milk-id",
+            "name": "milk",
+            "quantity": 2,
+        }
+        mock_coordinator.async_update_item.return_value = True
+        call = MagicMock(spec=ServiceCall)
+        call.data = {
+            "inventory_id": "kitchen",
+            "item_id": "milk-id",
+            "name": "whole milk",
+            "quantity": 3,
+        }
+
+        await inventory_service.async_update_item(call)
+
+        args, kwargs = mock_coordinator.async_update_item.call_args
+        assert args == ("kitchen", "milk", "whole milk")
+        assert kwargs["item_id"] == "milk-id"
+        mock_coordinator.async_get_item_by_id.assert_awaited_with("kitchen", "milk-id")
+
+    @pytest.mark.asyncio
     async def test_async_remove_item_success(
         self,
         inventory_service: InventoryService,

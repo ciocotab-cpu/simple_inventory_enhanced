@@ -14,7 +14,8 @@ INVENTORY_ID = vol.Required("inventory_id")
 INVENTORY_ID_OPTIONAL = vol.Optional("inventory_id")
 INVENTORY_NAME = vol.Optional("inventory_name")
 NAME = vol.Required("name")
-OLD_NAME = vol.Required("old_name")
+OLD_NAME_OPTIONAL = vol.Optional("old_name")
+ITEM_ID = vol.Optional("item_id")
 
 
 def _require_inventory_id_or_name(data: dict) -> dict:
@@ -63,25 +64,40 @@ ADD_ITEM_SCHEMA = vol.Schema(
     )
 )
 
+
+def _require_item_id_or_old_name(data: dict) -> dict:
+    """Validate that an item ID or the legacy old_name is provided."""
+    if not (data.get("item_id") or data.get("old_name")):
+        raise vol.Invalid("Either 'item_id' or 'old_name' is required")
+    if data.get("item_id") and data.get("old_name"):
+        raise vol.Invalid("Specify either 'item_id' or 'old_name', not both")
+    return data
+
+
 UPDATE_ITEM_SCHEMA = vol.Schema(
     vol.All(
         {
             INVENTORY_ID_OPTIONAL: cv.string,
             INVENTORY_NAME: cv.string,
-            OLD_NAME: cv.string,
+            ITEM_ID: cv.string,
+            OLD_NAME_OPTIONAL: cv.string,
             **ITEM_SCHEMA,
         },
+        _require_item_id_or_old_name,
         _require_inventory_id_or_name,
     )
 )
 
 
 def _require_name_or_barcode(data: dict) -> dict:
-    """Validate that at least one of name or barcode is provided."""
+    """Validate that at least one item identifier is provided."""
     has_name = "name" in data and data["name"]
     has_barcode = "barcode" in data and data["barcode"]
-    if not (has_name or has_barcode):
-        raise vol.Invalid("At least one of 'name' or 'barcode' is required")
+    has_id = "item_id" in data and data["item_id"]
+    if not (has_id or has_name or has_barcode):
+        raise vol.Invalid("At least one of 'item_id', 'name', or 'barcode' is required")
+    if has_id and (has_name or has_barcode):
+        raise vol.Invalid("'item_id' cannot be combined with 'name' or 'barcode'")
     return data
 
 
@@ -90,6 +106,7 @@ REMOVE_ITEM_SCHEMA = vol.Schema(
         {
             INVENTORY_ID_OPTIONAL: cv.string,
             INVENTORY_NAME: cv.string,
+            ITEM_ID: cv.string,
             vol.Optional("name"): cv.string,
             vol.Optional("barcode"): cv.string,
         },
@@ -103,6 +120,7 @@ QUANTITY_UPDATE_SCHEMA = vol.Schema(
         {
             INVENTORY_ID_OPTIONAL: cv.string,
             INVENTORY_NAME: cv.string,
+            ITEM_ID: cv.string,
             vol.Optional("name"): cv.string,
             vol.Optional("barcode"): cv.string,
             vol.Optional("amount", default=DEFAULT_QUANTITY): vol.All(

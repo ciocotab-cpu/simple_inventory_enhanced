@@ -31,6 +31,14 @@ def mock_coordinator() -> MagicMock:
     coordinator.async_get_item = AsyncMock(
         return_value={"quantity": 5, "auto_add_to_list_quantity": 2}
     )
+    coordinator.async_get_item_by_id = AsyncMock(
+        return_value={
+            "id": "milk-id",
+            "name": "milk",
+            "quantity": 5,
+            "auto_add_to_list_quantity": 2,
+        }
+    )
     coordinator.async_list_items = AsyncMock(return_value=[{"name": "milk", "quantity": 5}])
     coordinator.async_save_data = AsyncMock()
     coordinator.async_lookup_by_barcode = AsyncMock(return_value=[])
@@ -97,6 +105,23 @@ async def test_async_increment_item_success(
         "milk", {"quantity": 5, "auto_add_to_list_quantity": 2}
     )
     mock_coordinator.async_save_data.assert_awaited_once_with("kitchen")
+
+
+@pytest.mark.asyncio
+async def test_async_increment_item_targets_item_id(
+    quantity_service: QuantityService,
+    mock_coordinator: MagicMock,
+) -> None:
+    call = MagicMock(spec=ServiceCall)
+    call.data = {"inventory_id": "kitchen", "item_id": "milk-id", "amount": 2}
+    call.context.id = "ctx-id"
+
+    await quantity_service.async_increment_item(call)
+
+    mock_coordinator.async_increment_item.assert_awaited_once_with(
+        "kitchen", None, 2.0, barcode=None, price=None, item_id="milk-id"
+    )
+    mock_coordinator.async_get_item_by_id.assert_awaited()
 
 
 @pytest.mark.asyncio

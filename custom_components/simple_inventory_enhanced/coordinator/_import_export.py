@@ -103,7 +103,12 @@ class _ImportExportMixin(_CoordinatorProtocol):
                     errors.append("Item missing name, skipped")
                     continue
 
-                existing = await self.repository.get_item_by_name(inventory_id, name.strip())
+                imported_id = item_data.get("id")
+                existing = (
+                    await self.repository.get_item_by_id(inventory_id, str(imported_id))
+                    if imported_id
+                    else await self.repository.get_item_by_name(inventory_id, name.strip())
+                )
 
                 if existing and merge_strategy == "skip":
                     skipped += 1
@@ -210,6 +215,7 @@ class _ImportExportMixin(_CoordinatorProtocol):
     def _build_import_payload(self, item_data: dict[str, Any]) -> dict[str, Any]:
         """Build a clean item payload from imported data."""
         return {
+            "id": item_data.get("id"),
             FIELD_NAME: str(item_data.get(FIELD_NAME, "")).strip(),
             FIELD_DESCRIPTION: str(item_data.get(FIELD_DESCRIPTION, "")),
             FIELD_QUANTITY: float(item_data.get(FIELD_QUANTITY, 0)),
@@ -241,6 +247,7 @@ class _ImportExportMixin(_CoordinatorProtocol):
         """Convert items list to a CSV string."""
         output = io.StringIO()
         fieldnames = [
+            "id",
             "name",
             "description",
             "quantity",
@@ -264,6 +271,7 @@ class _ImportExportMixin(_CoordinatorProtocol):
 
         for item in items:
             row = {
+                "id": item.get("id", ""),
                 "name": item.get(FIELD_NAME, ""),
                 "description": item.get(FIELD_DESCRIPTION, ""),
                 "quantity": item.get(FIELD_QUANTITY, 0),
@@ -296,6 +304,7 @@ class _ImportExportMixin(_CoordinatorProtocol):
         items: list[dict[str, Any]] = []
         for row in reader:
             item: dict[str, Any] = {
+                "id": row.get("id") or None,
                 FIELD_NAME: row.get("name", ""),
                 FIELD_DESCRIPTION: row.get("description", ""),
                 FIELD_QUANTITY: float(row.get("quantity", 0) or 0),

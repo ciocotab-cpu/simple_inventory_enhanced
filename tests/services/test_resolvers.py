@@ -132,6 +132,20 @@ async def test_resolve_item_name_substring_match() -> None:
 
 
 @pytest.mark.asyncio
+async def test_resolve_item_name_duplicate_label_is_ambiguous() -> None:
+    coordinator = MagicMock()
+    coordinator.async_list_items = AsyncMock(
+        return_value=[
+            {"id": "foil-a", "name": "Aluminum Foil"},
+            {"id": "foil-b", "name": "Aluminum Foil"},
+        ]
+    )
+
+    with pytest.raises(ServiceValidationError, match="matches multiple items"):
+        await resolve_item_name(coordinator, "inv_1", "Aluminum Foil")
+
+
+@pytest.mark.asyncio
 async def test_resolve_item_name_no_match_raises() -> None:
     coordinator = MagicMock()
     coordinator.async_list_items = AsyncMock(return_value=[{"name": "Paper Towels"}])
