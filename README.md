@@ -5,15 +5,37 @@
 
 # Simple Inventory Enhanced
 
-This project is based on **[Simple Inventory](https://github.com/blaineventurine/simple_-_inventory)**, a custom integration for Home Assistant that manages inventories and items.
+This project is based on **[Simple Inventory](https://github.com/blaineventurine/simple_inventory)**, a custom integration for Home Assistant that manages inventories and items.
 
 This version introduces, in particular:
 
 - the use of a stable object ID for updates, removals, and quantity adjustments;
-- the ability to have objects with the same name within the same inventory;
+- **the ability to have objects with the same name within the same inventory**;
 - the inclusion of an ID in export and import data;
 - a database migration to the v4 schema, which preserves objects and their associated links.
 
 ### Backup before updating
 
 Before installing or updating to this version, export your existing inventory from Home Assistant and keep the exported file as a backup. The JSON format is recommended. After the update, the database migration should automatically retain your existing data; only import your backup via `simple_inventory_enhanced/import` if data is missing or needs to be restored. If you are importing into an inventory that is already populated, avoid using `merge_quantities`, as this would cause quantities to be added together again. The import feature supports both JSON and CSV formats; further details can be found in the [Import and Export](#import-and-export) section.
+
+
+### 📥 Installation Guide
+
+### 1. Custom Installation via HACS (Custom Repository)
+1. Open Home Assistant and click **HACS** in the sidebar.
+2. Click the **three dots** in the upper right corner and select **Custom Repositories**.
+3. Paste the GitHub repository URL into the text box:  
+   `https://github.com/ciocotab-cpu/simple_inventory_enhanced`
+4. Under **Category**, select **Integration**.
+5. Click the **Add** button.
+6. The Inventory will appear in the HACS list under "New Repositories".
+7. Click the Inventory and press **Download** in the bottom right corner.
+
+### 2. Manual Installation (without HACS)
+1. Download the zip file from the last release.
+2. Extract in the folder custom_components\simple_inventory_enhanced.
+
+### 3. Final Setup
+1. Restart Home Assistant
+2. Create Inventory in Integration
+3. Install **[Simple Inventory Enhanced Card](https://github.com/ciocotab-cpu/simple-inventory-enhanced-card)** for best experience
