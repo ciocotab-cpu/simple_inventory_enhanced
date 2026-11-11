@@ -12,7 +12,9 @@ from custom_components.simple_inventory_enhanced.providers.open_beauty_facts imp
 from custom_components.simple_inventory_enhanced.providers.open_pet_food_facts import (
     OpenPetFoodFactsProvider,
 )
-from custom_components.simple_inventory_enhanced.providers.openfoodfacts import OpenFoodFactsProvider
+from custom_components.simple_inventory_enhanced.providers.openfoodfacts import (
+    OpenFoodFactsProvider,
+)
 from custom_components.simple_inventory_enhanced.providers.registry import (
     DEFAULT_PROVIDER,
     PROVIDER_REGISTRY,

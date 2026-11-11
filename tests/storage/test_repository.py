@@ -43,7 +43,9 @@ def hass_with_tmp_config(hass: HomeAssistant, tmp_path: Path) -> HomeAssistant:
 
 @pytest.fixture
 async def repo(hass_with_tmp_config: HomeAssistant) -> AsyncGenerator[InventoryRepository, None]:
-    repository = InventoryRepository(hass_with_tmp_config, db_filename="test_simple_inventory_enhanced.db")
+    repository = InventoryRepository(
+        hass_with_tmp_config, db_filename="test_simple_inventory_enhanced.db"
+    )
     await repository.async_initialize()
     try:
         yield repository

@@ -256,7 +256,9 @@ class TestServiceHandler:
 
         with (
             patch("custom_components.simple_inventory_enhanced.services.InventoryService"),
-            patch("custom_components.simple_inventory_enhanced.services.QuantityService") as mock_qs_cls,
+            patch(
+                "custom_components.simple_inventory_enhanced.services.QuantityService"
+            ) as mock_qs_cls,
         ):
             mock_qs_cls.return_value = mock_quantity_instance
             handler = ServiceHandler(mock_hass, mock_todo_manager)

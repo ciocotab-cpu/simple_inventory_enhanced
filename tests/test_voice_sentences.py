@@ -163,7 +163,9 @@ async def test_install_writes_to_matched_base_language_for_variant(
     )
     assert target.is_file()
     variant_target = Path(
-        hass_with_tmp_config.config.path("custom_sentences", "en-US", "simple_inventory_enhanced.yaml")
+        hass_with_tmp_config.config.path(
+            "custom_sentences", "en-US", "simple_inventory_enhanced.yaml"
+        )
     )
     assert not variant_target.exists()
     assert reload_calls == [{"language": "en"}]
@@ -197,7 +199,10 @@ async def test_install_toctou_race_treated_as_already_present(
 def test_copy_template_raises_file_exists_error_without_touching_content(
     tmp_path: Path,
 ) -> None:
-    from custom_components.simple_inventory_enhanced.voice_sentences import _BUNDLED_ROOT, _copy_template
+    from custom_components.simple_inventory_enhanced.voice_sentences import (
+        _BUNDLED_ROOT,
+        _copy_template,
+    )
 
     source = _BUNDLED_ROOT / "en" / "simple_inventory_enhanced.yaml"
     target = tmp_path / "simple_inventory_enhanced.yaml"
