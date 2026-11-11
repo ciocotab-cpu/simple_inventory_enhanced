@@ -20,7 +20,7 @@
 # then call `release_main "$@"`.
 
 REMOTE="${REMOTE:-origin}"
-BRANCH="${BRANCH:-main}"
+BRANCH="${BRANCH:-master}"
 
 die() { echo "error: $*" >&2; exit 1; }
 

@@ -43,7 +43,7 @@ Examples:
   ./release.sh patch
   ./release.sh minor --yes
   ./release.sh beta --dry-run
-  ./release.sh patch --remote upstream --branch main
+  ./release.sh patch --remote upstream --branch master
 EOF
 }
 
