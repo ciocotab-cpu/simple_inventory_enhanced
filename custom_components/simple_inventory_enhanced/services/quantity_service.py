@@ -60,6 +60,7 @@ class QuantityService(BaseServiceHandler):
     ) -> None:
         inventory_id_raw, inventory_name, name, barcode = self._get_inventory_name_barcode(call)
         item_id = call.data.get("item_id")
+        item_id_was_provided = bool(item_id)
         inventory_id = await resolve_inventory_id(self.hass, inventory_id_raw, inventory_name)
         amount = float(call.data.get("amount", 1))
         price: float | None = call.data.get("price")
@@ -72,24 +73,23 @@ class QuantityService(BaseServiceHandler):
             )
 
         if item_id:
-            item_data = await coordinator.async_get_item_by_id(inventory_id, item_id)
-            if item_data is None:
-                raise ServiceValidationError(f"No item with ID '{item_id}' found")
-            name = str(item_data.get("name", item_id))
-            display_name = name
+            name = None
+            display_name = str(item_id)
         elif name:
             item_id = await resolve_item_id(coordinator, inventory_id, name)
-            if item_id:
-                item_data = await coordinator.async_get_item_by_id(inventory_id, item_id)
-            else:
+            if not item_id:
                 name = await resolve_item_name(coordinator, inventory_id, name)
-                item_data = await coordinator.async_get_item(inventory_id, name)
-            name = str(item_data.get("name", name)) if item_data else name
             display_name = name
 
         try:
             if await coordinator_method(
-                coordinator, inventory_id, name, amount, barcode, price, item_id
+                coordinator,
+                inventory_id,
+                None if item_id_was_provided else name,
+                amount,
+                barcode,
+                price,
+                item_id,
             ):
                 resolved_name = name
                 resolved_item_id = item_id
@@ -102,15 +102,18 @@ class QuantityService(BaseServiceHandler):
                         resolved_name = match.get("name")
                         resolved_item_id = str(match.get("id", "")) or None
 
-                if resolved_name:
-                    if resolved_item_id:
-                        item_data = await coordinator.async_get_item_by_id(
-                            inventory_id, resolved_item_id
-                        )
-                    else:
-                        item_data = await coordinator.async_get_item(inventory_id, resolved_name)
-                    if item_data:
-                        await todo_method(resolved_name, cast(InventoryItem, item_data))
+                item_data = None
+                if resolved_item_id:
+                    item_data = await coordinator.async_get_item_by_id(
+                        inventory_id, resolved_item_id
+                    )
+                elif resolved_name:
+                    item_data = await coordinator.async_get_item(inventory_id, resolved_name)
+                if item_data:
+                    resolved_name = str(
+                        item_data.get("name", resolved_name or resolved_item_id or "unknown")
+                    )
+                    await todo_method(resolved_name, cast(InventoryItem, item_data))
 
                 await self._save_and_log_success(
                     coordinator,
@@ -124,6 +127,8 @@ class QuantityService(BaseServiceHandler):
                     display_name,
                     inventory_id,
                 )
+                if item_id_was_provided:
+                    raise ServiceValidationError(f"No item with ID '{item_id}' found")
                 raise ServiceValidationError(
                     f"No item named '{display_name}' found in inventory "
                     f"'{inventory_display_name(self.hass, inventory_id)}'"

@@ -163,6 +163,7 @@ class InventoryService(BaseServiceHandler):
                 f"Inventory '{inventory_display_name(self.hass, inventory_id)}' is not currently loaded"
             )
 
+        item: dict[str, Any] | None = None
         if item_id:
             item = await coordinator.async_get_item_by_id(inventory_id, item_id)
             if item is None:
@@ -189,14 +190,12 @@ class InventoryService(BaseServiceHandler):
                     resolved_name = match.get("name")
                     item_id = str(match.get("id", "")) or None
 
-            if resolved_name:
+            if resolved_name and item is None:
                 item = (
                     await coordinator.async_get_item_by_id(inventory_id, item_id)
                     if item_id
                     else await coordinator.async_get_item(inventory_id, resolved_name)
                 )
-            else:
-                item = None
 
             remove_kwargs: dict[str, Any] = {"barcode": barcode}
             if item_id:
